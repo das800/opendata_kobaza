@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <style>
+            * {
+                font-family: monospace;
+            }
+        </style>
+    </head>
+    <body>
+        <h1>Context</h1>
+        {% for context in meta['meta-attributes']['context'] %}
+            <h2>{{ context[0].upper() + context[1:] }}:</h2>
+            <p>{{ meta['meta-attributes']['context'][context] }}</p>
+        {% endfor %}
+
+        <h1>Variables</h1>
+        {% for variable in meta['meta-attributes']['variables'] %}
+            <h2>{{ variable }}:</h2>
+            <p>{{ meta['meta-attributes']['variables'][variable] }}</p>
+        {% endfor %}
+    </body>
+</html>
+
+
+
