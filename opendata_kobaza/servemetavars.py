@@ -19,7 +19,10 @@ ds_metavars_filenames = {
 
 @app.route('/')
 def main():
-    return f"choose one of {ds_metavars_filenames.keys()}"
+    ds_metavars_names = {ds_id: ds_metavars_filenames[ds_id][:-11] for ds_id in ds_metavars_filenames}
+    # return f"choose one of {ds_metavars_filenames.keys()}"
+
+    return render_template('home.html', ds_names_dict = ds_metavars_names)
 
 @app.route('/<dataset>')
 def dataset_page(dataset):
