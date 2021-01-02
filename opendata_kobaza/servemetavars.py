@@ -10,7 +10,7 @@ import os
 from flask import Flask, render_template, send_from_directory
 app = Flask(__name__)
 
-ds_metavars_folder = '/home/pi/DS/opendatawebapp/flask_app/metavars'
+ds_metavars_folder = os.path.join(app.root_path, 'metavars')
 
 ds_metavars_filenames = {
     'pop': 'SYB63_1_202009_Population, Surface Area and Density_clean.json', 
