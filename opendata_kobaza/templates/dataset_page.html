@@ -1,5 +1,11 @@
 {% extends 'base.html' %}
+
+{% block title %} <title>Kobaza: {{meta['name']}}</title> {% endblock %}
+
 {% block content %}
+    <a href = {{ url_for('dl_dataset', dataset_filename = meta['cleaned data file']) }}>{{ "Download cleaned " + meta['name'] }}</a>
+    <br>
+    <a href = {{ url_for('dl_dataset', dataset_filename = meta['raw data file']) }}>{{ "Download raw " + meta['name'] }}</a>
     <h1>Context</h1>
     {% for context in meta['meta-attributes']['context'] %}
         <h2>{{ context[0].upper() + context[1:] }}:</h2>

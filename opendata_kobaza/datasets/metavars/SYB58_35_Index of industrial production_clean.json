@@ -1,5 +1,7 @@
 {
-    "raw data": "SYB58_35_Index of industrial production_clean.csv",
+    "name": "UN Global Industrial Production Index open dataset",
+    "raw data file": "SYB58_35_Index of industrial production.csv",
+    "cleaned data file": "SYB58_35_Index of industrial production_clean.csv",
     "last updated": "2020-11-05",
     "meta-attributes": {
         "context": {
