@@ -7,7 +7,7 @@ purpose: test out templating in flask by serving the meta vars of the 2 processe
 
 import json
 import os
-from flask import Flask, render_template, send_from_directory, safe_join
+from flask import Flask, render_template, send_from_directory, request
 app = Flask(__name__)
 
 ds_metavars_folder = os.path.join(app.root_path, 'datasets', 'metavars')
@@ -36,6 +36,11 @@ def dataset_page(dataset):
 def dl_dataset(dataset_filename):
     return send_from_directory(ds_folder, dataset_filename)
 
+@app.route('/dataset_search', methods = ['GET', 'POST'])
+def search_ds():
+    return request.form['searchbar']
+
+#misc
 @app.route('/favicon.ico')
 def favicon():
     return send_from_directory(os.path.join(app.root_path, 'static', 'img'), 'favicon.ico',mimetype='image/vnd.microsoft.icon')

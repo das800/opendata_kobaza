@@ -2,18 +2,18 @@
 <html>
     <head>
         {% block title %} {% endblock %}
-        <link rel = "stylesheet" type = "text/css" href = {{ url_for("static", filename = "css/base.css") }}>
-        <style>
-            .content {
-                margin: auto;
-                width: 60%;
-                border: 5px solid #30422d;
-                padding: 10px;
-            }
-        </style>
+        <link rel="stylesheet" type="text/css" href={{ url_for("static", filename="css/base.css") }}>
     </head>
     <body>
-        <div class = "content">
+        <div class="topnav">
+            <a class="navbutton" href={{ url_for('main') }}>Kobaza</a>
+            <div class="topnav-centered">
+                <form action={{ url_for('search_ds') }} method="POST">
+                    <input type="text" name="searchbar" placeholder="Search">
+                </form>
+            </div>
+        </div>
+        <div class="content">
             {% block content %} {% endblock %}
         </div>
     </body>
