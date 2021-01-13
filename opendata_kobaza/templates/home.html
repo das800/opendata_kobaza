@@ -6,7 +6,7 @@
     <h1>Datasets:</h1>
     <ul>
         {% for ds_id in ds_names_dict %}
-            <li><a href = "{{ url_for('dataset_page', dataset = ds_id) }}">{{ ds_names_dict[ds_id] }}</a></li>
+            <li><a href = "{{ url_for('dataset_page', ds_id = ds_id) }}">{{ ds_names_dict[ds_id] }}</a></li>
         {% endfor %}
     </ul>
 {% endblock %}

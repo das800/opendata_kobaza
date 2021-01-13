@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block title %} <title>Kobaza Search: {{ query }}</title> {% endblock %}
+
+{% block content %}
+    <h1>Search Results for: {{ query }}</h1>
+
+    {% for ds_res in results %}
+        <a href={{ url_for('dataset_page', ds_id = ds_res[0]) }}>
+            <div class='searchResult'>
+                <h1>{{ ds_res[1].name }}</h1>
+                <p>{{ ds_res[1].best_match }}</p>
+            </div>
+        </a>
+        <br>
+    {% endfor %}
+{% endblock %}
