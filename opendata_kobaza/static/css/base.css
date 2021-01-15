@@ -1,13 +1,21 @@
+:root {
+    --background_color: #1d1d1d;
+    --text_color: #a3a3a3;
+    --accent_color: #30422d;
+    --pop_color: #ffffff;
+}
+
+
 * {
     font-family: monospace;
 }
 
 body {
-    background-color: #1d1d1d;
+    background-color: var(--background_color);
 }
 
 p, h1, h2, h3, h4, h5, h6 {
-    color: #a3a3a3;
+    color: var(--text_color);
 }
 
 ul li {
@@ -27,26 +35,27 @@ a:hover {
 .content { 
     margin: auto; 
     width: 60%; 
-    border: 5px solid #30422d;
+    /* border: 5px solid #30422d; */
+    border: 5px solid var(--accent_color);
     border-top: 0px;
     padding: 10px; 
 }
 
 .topnav { 
     overflow: hidden; 
-    background-color: #30422d; 
+    background-color: var(--accent_color); 
 }
 .topnav a { 
     float: left; 
     display: block; 
-    color: #ffffff; 
+    color: var(--pop_color); 
     text-align: center; 
     padding: 14px 16px; 
     text-decoration: none; 
     font-size: 17px; }
 .topnav a:hover {
-    background-color: #1d1d1d;
-    color: #ffffff;
+    background-color: var(--background_color);
+    color: var(--pop_color);
   }
 .topnav input[type=text] {
 /* .topnav input { */
@@ -57,8 +66,8 @@ a:hover {
     border: none;
     margin-top: 8px;
     font-size: 17px;
-    color: #a3a3a3;
-    background-color: #1d1d1d;
+    color: var(--text_color);
+    background-color: var(--background_color);
 }
 .topnav-centered input[type=text] {
 /* .topnav-centered input { */
@@ -66,4 +75,20 @@ a:hover {
     position: absolute;
     left: 50%;
     transform: translate(-50%, 0%);
+}
+
+.searchResult {
+    padding: 10px;
+    border: 3px solid var(--accent_color);
+}
+/* .searchResult:hover {
+    background-color: var(--accent_color);
+    border: 3px solid var(--accent_color);
+} */
+.searchResult:hover h1{
+    text-decoration: underline;
+    color: #00dce8;
+}
+.searchResult a {
+    text-decoration: none;
 }
