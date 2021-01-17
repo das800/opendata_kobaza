@@ -1,5 +1,6 @@
 {
-    "name": "UN Global Population/Census open dataset",
+    "ds_id": "8bc46972-5bde-42b0-b84b-11558e8fca07", 
+    "name": "UN Global Population/Census",
     "raw data file": "SYB63_1_202009_Population, Surface Area and Density.csv",
     "cleaned data file": "SYB63_1_202009_Population, Surface Area and Density_clean.csv",
     "last updated": "2020-11-05",

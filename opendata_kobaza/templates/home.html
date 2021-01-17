@@ -3,10 +3,10 @@
 {% block title %} <title>Kobaza: Free and Open Data</title> {% endblock %}
 
 {% block content %}
-    <h1>Datasets:</h1>
-    <ul>
-        {% for ds_id in ds_names_dict %}
-            <li><a href = "{{ url_for('dataset_page', ds_id = ds_id) }}">{{ ds_names_dict[ds_id] }}</a></li>
-        {% endfor %}
-    </ul>
+	<h1>Datasets:</h1>
+	<ul>
+		{% for ds_id in ds_names_dict %}
+			<li><a href = "{{ url_for('dataset_page', ds_id = ds_id) }}">{{ ds_names_dict[ds_id] }}</a></li>
+		{% endfor %}
+	</ul>
 {% endblock %}

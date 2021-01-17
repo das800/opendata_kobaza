@@ -1,5 +1,6 @@
 {
-    "name": "UN Global Industrial Production Index open dataset",
+    "ds_id": "fbc23368-e5f3-4b23-81ef-31e5cc7f208f", 
+    "name": "UN Global Industrial Production Index",
     "raw data file": "SYB58_35_Index of industrial production.csv",
     "cleaned data file": "SYB58_35_Index of industrial production_clean.csv",
     "last updated": "2020-11-05",
