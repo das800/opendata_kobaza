@@ -36,10 +36,10 @@ def main():
 #dataset functions
 @app.route('/datasets/<ds_id>')
 def dataset_page(ds_id):
-	with open(os.path.join(ds_metavars_folder, ds_metavars_filenames[ds_id])) as json_fh:
-		ds_metavars = json.load(json_fh)
-	
-	return render_template('dataset_page.html', meta = ds_metavars)
+	# with open(os.path.join(ds_metavars_folder, ds_metavars_filenames[ds_id])) as json_fh:
+	# 	ds_metavars = json.load(json_fh)
+	ds_metavars = data_access.get_item_by_ds_id(ds_id)
+	return render_template('dataset_page.html', metavars_dict = ds_metavars)
 
 
 @app.route('/dl_dataset/<dataset_filename>')

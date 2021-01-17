@@ -18,9 +18,19 @@ dynamodbres = boto3.resource(aws_db_service, region_name = aws_region_id)
 dynamodbclient = boto3.client(aws_db_service, region_name = aws_region_id)
 table = dynamodbres.Table(aws_dynamodb_tablename)
 
+
+def get_item_by_ds_id(ds_id):
+	'''
+	retreives a single ds_metavar item by its ds_id
+	'''
+	item = table.get_item(Key = {'ds_id': ds_id})['Item']
+
+	return item
+
+
 def get_all_ds_ids():
 	'''
-	gets all prim keys for ds metavars from the db, TODO never use this as it is stupid to use and to try to get your entire dbs prim keys
+	gets all prim keys for ds metavars from the db, TODO never use this as scan is expensive and you should never retrieve your whole db
 	'''
 	scan_paginator = dynamodbclient.get_paginator('scan')
 
@@ -52,4 +62,6 @@ def get_names_by_ds_ids(ds_ids):
 		}
 		response = table.query(**query_params)
 		ds_names_dict[ds_id] = response['Items'][0]['name']
+
 	return ds_names_dict
+

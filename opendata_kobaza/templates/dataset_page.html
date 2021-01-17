@@ -1,22 +1,22 @@
 {% extends 'base.html' %}
 
-{% block title %} <title>Kobaza: {{meta['name']}}</title> {% endblock %}
+{% block title %} <title>Kobaza: {{metavars_dict['name']}} open dataset</title> {% endblock %}
 
 {% block content %}
-    <a href = {{ url_for('dl_dataset', dataset_filename = meta['cleaned data file']) }}>{{ "Download cleaned " + meta['name'] }}</a>
+    <a href = {{ url_for('dl_dataset', dataset_filename = metavars_dict['cleaned data file']) }}>{{ "Download cleaned " + metavars_dict['name'] }}</a>
     <br>
-    <a href = {{ url_for('dl_dataset', dataset_filename = meta['raw data file']) }}>{{ "Download raw " + meta['name'] }}</a>
+    <a href = {{ url_for('dl_dataset', dataset_filename = metavars_dict['raw data file']) }}>{{ "Download raw " + metavars_dict['name'] }}</a>
     <h1>Context</h1>
-    {% for context in meta['meta-attributes']['context'] %}
+    {% for context in metavars_dict['meta-attributes']['context'] %}
         <h2>{{ context[0].upper() + context[1:] }}:</h2>
-        <p>{{ meta['meta-attributes']['context'][context] }}</p>
+        <p>{{ metavars_dict['meta-attributes']['context'][context] }}</p>
         <br>
     {% endfor %}
 
     <h1>Variables</h1>
-    {% for variable in meta['meta-attributes']['variables'] %}
+    {% for variable in metavars_dict['meta-attributes']['variables'] %}
         <h2>{{ variable }}:</h2>
-        <p>{{ meta['meta-attributes']['variables'][variable] }}</p>
+        <p>{{ metavars_dict['meta-attributes']['variables'][variable] }}</p>
         <br>    
     {% endfor %}
 {% endblock %}
