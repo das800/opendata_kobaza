@@ -14,9 +14,9 @@
     {% endfor %}
 
     <h1>Variables</h1>
-    {% for variable in metavars_dict['meta-attributes']['variables'] %}
-        <h2>{{ variable }}:</h2>
-        <p>{{ metavars_dict['meta-attributes']['variables'][variable] }}</p>
+    {% for i in range(metavars_dict['meta-attributes']['variables']['variable_names']|length) %}
+        <h2>{{ metavars_dict['meta-attributes']['variables']['variable_names'][i] }}:</h2>
+        <p>{{ metavars_dict['meta-attributes']['variables']['variable_descriptions'][i] }}</p>
         <br>    
     {% endfor %}
 {% endblock %}

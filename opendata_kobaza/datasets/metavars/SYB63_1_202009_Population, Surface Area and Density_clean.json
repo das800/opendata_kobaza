@@ -1,5 +1,5 @@
 {
-    "ds_id": "8bc46972-5bde-42b0-b84b-11558e8fca07", 
+    "ds_id": "8bc46972-5bde-42b0-b84b-11558e8fca07",
     "name": "UN Global Population/Census",
     "ds_source": "https://data.un.org/",
     "raw data file": "SYB63_1_202009_Population, Surface Area and Density.csv",
@@ -12,16 +12,30 @@
             "situation": "global data, United Nations data"
         },
         "variables": {
-            "Region/Country/Area": "dimension. spatial, location. nations in the world, represents 235 UN-recognized countries and states. country",
-            "Year": "dimension. time. year, not collected regularly, every 3-5 years; 2005, 2010, 2017, and 2020 but include others too. year",
-            "Population aged 0 to 14 years old (percentage)": "fact. ratio. percentage of people aged less than 14. population_under_14",
-            "Population aged 60+ years old (percentage)": "fact. ratio. percentage of people aged more than 60. population_over_60",
-            "Population density": "fact. count per area. derived. average number of people living in one square km. population_density",
-            "Population mid-year estimates (millions)": "fact. count. number of millions of people in the whole country. mid-year estimate. population",
-            "Population mid-year estimates for females (millions)": "fact. count. number of millions of women in the whole country. mid-year estimate. population_female",
-            "Population mid-year estimates for males (millions)": "fact. count. number of millions of men in the whole country. mid-year estimate. population_male",
-            "Sex ratio (males per 100 females)": "fact. ratio. derived. percentage of men as compared to women, number of 100s of men per 100 women. gender_ratio",
-            "Surface area (thousand km2)": "fact. area. total surface area covered by country. area"
+            "variable_names": [
+                "Region/Country/Area",
+                "Year",
+                "Population aged 0 to 14 years old (percentage)",
+                "Population aged 60+ years old (percentage)",
+                "Population density",
+                "Population mid-year estimates (millions)",
+                "Population mid-year estimates for females (millions)",
+                "Population mid-year estimates for males (millions)",
+                "Sex ratio (males per 100 females)",
+                "Surface area (thousand km2)"
+            ],
+            "variable_descriptions": [
+                "dimension. spatial, location. nations in the world, represents 235 UN-recognized countries and states. country",
+                "dimension. time. year, not collected regularly, every 3-5 years; 2005, 2010, 2017, and 2020 but include others too. year",
+                "fact. ratio. percentage of people aged less than 14. population_under_14",
+                "fact. ratio. percentage of people aged more than 60. population_over_60",
+                "fact. count per area. derived. average number of people living in one square km. population_density",
+                "fact. count. number of millions of people in the whole country. mid-year estimate. population",
+                "fact. count. number of millions of women in the whole country. mid-year estimate. population_female",
+                "fact. count. number of millions of men in the whole country. mid-year estimate. population_male",
+                "fact. ratio. derived. percentage of men as compared to women, number of 100s of men per 100 women. gender_ratio",
+                "fact. area. total surface area covered by country. area"
+            ]
         },
         "size": {
             "rows": 991,
