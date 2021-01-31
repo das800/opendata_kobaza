@@ -1,6 +1,7 @@
 {
     "ds_id": "fbc23368-e5f3-4b23-81ef-31e5cc7f208f", 
     "name": "UN Global Industrial Production Index",
+    "ds_source": "https://data.un.org/",
     "raw data file": "SYB58_35_Index of industrial production.csv",
     "cleaned data file": "SYB58_35_Index of industrial production_clean.csv",
     "last updated": "2020-11-05",
@@ -29,9 +30,9 @@
             "Index of industrial production: Total industry - Mining; manufacturing; electricity, gas and water (Index base: 2005=100)": "fact. ratio, relative to 2005. measures aggregated production of mining; all manufacturing; and (all as utilities) electricity, natural gas, steam, heated water, and drinking water. Divs 10 - 37, 40, 41 of UNSD ISICrev3. mining_aggmanufac_elecgassteam_dwater_prod_index",
             "Index of industrial production: Water and waste management (Index base: 2005=100)": "fact. ratio, relative to 2005. measures production of water as a utility to be distributed through pre-built infrastructure, and waste recycling of metal and non-metal materials, Divs 37, 41 of UNSD ISICrev3. water_waste_prod_index"
         },
-        "size": [
-            922,
-            "922 records. yearly records during 2008-2014 for majority of countries, 2008-2012 for almost all, with very rare gaps in timeline. time resolution is 1 year. location spans 127 UN nations and countries including disputed ones. location resolution is the nations and countries mentioned in the location variable"
-        ]
+        "size": {
+            "rows": 922,
+            "description": "922 records. yearly records during 2008-2014 for majority of countries, 2008-2012 for almost all, with very rare gaps in timeline. time resolution is 1 year. location spans 127 UN nations and countries including disputed ones. location resolution is the nations and countries mentioned in the location variable"
+        }
     }
 }

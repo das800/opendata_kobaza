@@ -1,6 +1,7 @@
 {
     "ds_id": "8bc46972-5bde-42b0-b84b-11558e8fca07", 
     "name": "UN Global Population/Census",
+    "ds_source": "https://data.un.org/",
     "raw data file": "SYB63_1_202009_Population, Surface Area and Density.csv",
     "cleaned data file": "SYB63_1_202009_Population, Surface Area and Density_clean.csv",
     "last updated": "2020-11-05",
@@ -22,9 +23,9 @@
             "Sex ratio (males per 100 females)": "fact. ratio. derived. percentage of men as compared to women, number of 100s of men per 100 women. gender_ratio",
             "Surface area (thousand km2)": "fact. area. total surface area covered by country. area"
         },
-        "size": [
-            991,
-            "991 records. a few year-wise records per country, mostly 4 but upto 9. time resolution is roughly 5 years; year-wise records and about 5 years apart. years are usually 2005, 2010, 2017, and 2020 but include others too. location spans 235 UN nations and countries including disputed ones. location resolution is the nations and countries mentioned in the location variable"
-        ]
+        "size": {
+            "rows": 991,
+            "description": "991 records. a few year-wise records per country, mostly 4 but upto 9. time resolution is roughly 5 years; year-wise records and about 5 years apart. years are usually 2005, 2010, 2017, and 2020 but include others too. location spans 235 UN nations and countries including disputed ones. location resolution is the nations and countries mentioned in the location variable"
+        }
     }
 }

@@ -21,7 +21,7 @@ table = dynamodbres.Table(aws_dynamodb_tablename)
 
 def get_item_by_ds_id(ds_id):
 	'''
-	retreives a single ds_metavar item by its ds_id
+	retreives a single ds_metavar item by its $ds_id
 	'''
 	item = table.get_item(Key = {'ds_id': ds_id})['Item']
 
@@ -50,7 +50,7 @@ def get_all_ds_ids():
 
 def get_names_by_ds_ids(ds_ids):
 	'''
-	takes in a list of ds_ids and return a projection from the db of corresponding names
+	takes in a list of $ds_ids and return a projection from the db of corresponding names
 	'''
 
 	ds_names_dict = {}
