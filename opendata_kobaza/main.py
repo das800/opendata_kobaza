@@ -16,19 +16,13 @@ import search_kobaza
 import data_access
 
 #softcode paths globally
-ds_metavars_folder = os.path.join(app.root_path, 'datasets', 'metavars')
 ds_folder = os.path.join(app.root_path, 'datasets', 'sets')
-
-ds_metavars_filenames = {
-	'pop': 'SYB63_1_202009_Population, Surface Area and Density_clean.json', 
-	'ind': 'SYB58_35_Index of industrial production_clean.json'
-	}
+es_creds_filepath = os.path.join(app.root_path, 'security', 'kobaza_es_creds.txt')
 
 
 #main function
 @app.route('/')
 def main():
-	# ds_metavars_names = {ds_id: ds_metavars_filenames[ds_id][:-11] for ds_id in ds_metavars_filenames}
 	ds_names_dict = data_access.get_names_by_ds_ids(data_access.get_all_ds_ids()[:10])
 	return render_template('home.html', ds_names_dict = ds_names_dict)
 
@@ -36,8 +30,6 @@ def main():
 #dataset functions
 @app.route('/datasets/<ds_id>')
 def dataset_page(ds_id):
-	# with open(os.path.join(ds_metavars_folder, ds_metavars_filenames[ds_id])) as json_fh:
-	# 	ds_metavars = json.load(json_fh)
 	ds_metavars = data_access.get_item_by_ds_id(ds_id)
 	return render_template('dataset_page.html', metavars_dict = ds_metavars)
 
@@ -49,14 +41,10 @@ def dl_dataset(dataset_filename):
 
 @app.route('/dataset_search', methods = ['GET', 'POST'])
 def search_ds():
+	endpoint, username, password = search_kobaza.read_creds(es_creds_filepath)
 	query = request.form['searchbar']
-	results = []
-	for ds_id in ds_metavars_filenames:
-		with open(os.path.join(ds_metavars_folder, ds_metavars_filenames[ds_id])) as json_fh:
-			ds_sr = search_kobaza.find_q_in_metavarset(json.load(json_fh), query)
-			if len(ds_sr):
-				ds_sr_best_match = ds_sr.get_best_match()
-				results.append((ds_id, search_kobaza.DsDisplaySearchRes(ds_sr.metavar_json['name'], ds_sr.metavar_json['meta-attributes'][ds_sr_best_match[0]][ds_sr_best_match[1]]))) # TODO make ds_id a part of the display sr object putting it with the object as a tuple ad hoc is very bad
+
+	results = search_kobaza.simple_search(endpoint, username, password, query)
 
 	return render_template('search_results.html', query = query, results = results)
 

@@ -5,11 +5,10 @@
 {% block content %}
     <h1>Search Results for: {{ query }}</h1>
 
-    {% for ds_res in results %}
+    {% for query_hit in results %}
         <div class='searchResult'>
-            <a href={{ url_for('dataset_page', ds_id = ds_res[0]) }}>
-                    <h1>{{ ds_res[1].name }}</h1>
-                    <p>{{ ds_res[1].best_match }}</p>
+            <a href={{ url_for('dataset_page', ds_id = query_hit.id) }}>
+                    <h1>{{ query_hit.name }}</h1>
             </a>
         </div>
     <br>
