@@ -23,14 +23,14 @@ es_creds_filepath = os.path.join(app.root_path, 'security', 'kobaza_es_creds.txt
 #main function
 @app.route('/')
 def main():
-	ds_names_dict = data_access.get_names_by_ds_ids(data_access.get_all_ds_ids()[:10])
+	ds_names_dict = data_access.get_names_by_ds_ids_dynamodb(data_access.get_all_ds_ids_dynamodb()[:10])
 	return render_template('home.html', ds_names_dict = ds_names_dict)
 
 
 #dataset functions
 @app.route('/datasets/<ds_id>')
 def dataset_page(ds_id):
-	ds_metavars = data_access.get_item_by_ds_id(ds_id)
+	ds_metavars = data_access.get_item_by_ds_id_dynamodb(ds_id)
 	return render_template('dataset_page.html', metavars_dict = ds_metavars)
 
 
@@ -41,7 +41,7 @@ def dl_dataset(dataset_filename):
 
 @app.route('/dataset_search', methods = ['GET', 'POST'])
 def search_ds():
-	endpoint, username, password = search_kobaza.read_creds(es_creds_filepath)
+	endpoint, username, password = data_access.read_creds(es_creds_filepath)
 	query = request.form['searchbar']
 
 	results = search_kobaza.simple_search(endpoint, username, password, query)
