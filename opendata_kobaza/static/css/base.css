@@ -1,13 +1,21 @@
 :root {
     --background_color: #1d1d1d;
-    --text_color: #a3a3a3;
+    --text_color: #d8d8d8;
     --accent_color: #30422d;
     --pop_color: #ffffff;
+    --link_link_color: #2483ff;
+    --link_visited_color: #c66bff;
+    --link_hover_color: #00dce8;
+    --warning_color: #cf6679;
 }
 
 
 * {
     font-family: monospace;
+}
+
+.flashes p {
+    color: var(--warning_color);
 }
 
 body {
@@ -23,13 +31,13 @@ ul li {
 }
 
 a:link {
-    color: #2483ff;
+    color: var(--link_link_color);
 }
 a:visited {
-    color: #c66bff;
+    color: var(--link_visited_color);
 }
 a:hover {
-    color: #00dce8;
+    color: var(--link_hover_color);
 }
 
 .content { 
@@ -45,18 +53,24 @@ a:hover {
     overflow: hidden; 
     background-color: var(--accent_color); 
 }
-.topnav a { 
-    float: left; 
+.topnav .navbutton { 
+    /* float: left;  */
     display: block; 
     color: var(--pop_color); 
     text-align: center; 
     padding: 14px 16px; 
     text-decoration: none; 
     font-size: 17px; }
-.topnav a:hover {
+.topnav .navbutton:hover {
     background-color: var(--background_color);
     color: var(--pop_color);
   }
+.topnav #home_button {
+    float: left;
+}
+.topnav #upload_button {
+    float: right;
+}
 .topnav input[type=text] {
 /* .topnav input { */
     display: block;
@@ -87,8 +101,16 @@ a:hover {
 } */
 .searchResult:hover h1{
     text-decoration: underline;
-    color: #00dce8;
+    color: var(--link_hover_color);
 }
 .searchResult a {
     text-decoration: none;
+}
+
+.data_upload_form input, textarea{
+    background-color: var(--background_color);
+    color: var(--pop_color);
+}
+.data_upload_form #add_var_button, #submit_matavars{
+    background-color: var(--accent_color);
 }

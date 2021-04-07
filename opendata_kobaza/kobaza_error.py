@@ -56,3 +56,25 @@ class MetavarsetDatastoreOperationFailedError(Exception):
 		self.ds_id = ds_id
 		self.operation = operation
 		super().__init__(f'datastore {operation} operation on metavarset {ds_id} fialed')
+
+
+class UploadedVarsNamesAndDescsCountsUnequalError(Exception):
+	'''
+	custom error for when the number of var names and var descs in an uploaded metavar set do not match
+	'''
+	def __init__(self, count_var_names: int, count_var_descs: int):
+		self.count_var_names = count_var_names
+		self.count_var_descs = count_var_descs
+		super().__init__('var name and desc counts are unequal')
+
+	def __str__(self):
+		return f"number of var names ({self.count_var_names}) does not match number of var descs ({self.count_var_descs})"
+
+
+class FileNotFoundInMetavarsetUploadError(Exception):
+	'''
+	custom error for when the metavarset upload request object does not contain the raw data file
+	'''
+	def __init__(self, file_input_name:str):
+		self.file_input_name = file_input_name
+		super().__init__(f"could not find key \'{file_input_name}\' in metavarset upload object")

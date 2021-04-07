@@ -8,13 +8,21 @@ reqs: needs aws cli to be installed and configured in the same env to work prope
 '''
 ###with aws dynamobd (make sure aws cli is installed and configured)
 import json
+import os
+from main import app
 import requests
 import boto3
+import uuid
 from boto3.dynamodb.conditions import Key, Attr
+from werkzeug.utils import secure_filename
+import werkzeug
 
 #custom imports
 import kobaza_error
 import search_kobaza
+
+ALLOWED_EXTENSIONS = {'csv', 'tsv'}
+DS_FOLDER = os.path.join(app.root_path, 'datasets', 'sets')
 
 aws_db_service = 'dynamodb'
 aws_region_id = 'eu-central-1'
@@ -23,6 +31,7 @@ aws_dynamodb_tablename = 'kobaza_ds_metavars'
 dynamodbres = boto3.resource(aws_db_service, region_name = aws_region_id)
 dynamodbclient = boto3.client(aws_db_service, region_name = aws_region_id)
 table = dynamodbres.Table(aws_dynamodb_tablename)
+
 
 
 
@@ -420,6 +429,7 @@ def insert_metavarset(endpoint, username, password, metavar_json):
 	if not is_valid_metavarset(metavar_json): #fail if metavarset not valid
 		raise kobaza_error.MetavarsetIsInvalid(metavar_json)
 
+	#check if dataset is already present, raise appropriate errors
 	try:
 		present = is_metavarset_present(endpoint, username, password, metavar_json)
 	except kobaza_error.DataStoreInconsistantError as e:
@@ -427,16 +437,11 @@ def insert_metavarset(endpoint, username, password, metavar_json):
 	if present:
 		raise kobaza_error.MetavarsetAlreadyPresentError(metavar_json['ds_id'])
 
-	# db_response = insert_metavarset_dynamodb(metavar_json)
-	# if confirm_db_response(db_response, 'created', metavar_json['ds_id']): #db create passed, now attempt es
+	#attempt to create in db
 	if insert_metavarset_dynamodb(metavar_json): #db create passed, now attempt es
-		# es_response = insert_metavarset_elasticsearch(endpoint, username, password, metavar_json)
-		# if confirm_es_response(endpoint, username, password, es_response, 'created'): #db passed, es passed
 		if insert_metavarset_elasticsearch(endpoint, username, password, metavar_json): #db passed, es passed
 			return True
 		else: #es failed. delete from db
-			# db_delete_response = delete_metavarset_dynamodb(metavar_json['ds_id'])
-			# if confirm_db_response(db_delete_response, 'deleted', metavar_json['ds_id']): #es failed, db passed but then successfully deleted from db, insert failed but datastores consistant, fail loudly
 			if delete_metavarset_dynamodb(metavar_json['ds_id']): #es failed, db passed but then successfully deleted from db, insert failed but datastores consistant, fail loudly
 				raise kobaza_error.MetavarsetDatastoreOperationFailedError(metavar_json['ds_id'], 'insert')
 			else: # delete on db failed, metavarset exists on db but not es, raise alarm
@@ -449,6 +454,8 @@ def delete_metavarset(endpoint, username, password, ds_id):
 	'''
 	delete metavarset with $ds_id from both es and db
 	'''
+
+	#check if dataset is present, raise appropriate errors
 	try:
 		present = is_metavarset_present(endpoint, username, password, ds_id)
 	except kobaza_error.DataStoreInconsistantError as e:
@@ -456,24 +463,121 @@ def delete_metavarset(endpoint, username, password, ds_id):
 	if not present:
 		raise kobaza_error.MetavarsetNotFoundError(ds_id)
 
+	#get the actual metavarset so as to reinsert into db if es delete failed. which is done to keep datastores consistant
 	try:
 		metavar_json = get_item_by_ds_id_dynamodb(ds_id)
 	except kobaza_error.MetavarsetNotFoundError as e:
 		raise e
 
-	# db_response = delete_metavarset_dynamodb(ds_id)
-	# if confirm_db_response(db_response, 'deleted', ds_id): #db delete passed, now attempt es
+	#attempt db delete
 	if delete_metavarset_dynamodb(ds_id): #db delete passed, now attempt es
-		# es_response = delete_metavarset_elasticsearch(endpoint, username, password, ds_id)
-		# if confirm_es_response(endpoint, username, password, es_response, 'deleted'): #db passed, es passed
 		if delete_metavarset_elasticsearch(endpoint, username, password, ds_id): #db passed, es passed
 			return True
 		else:# es failed but db passed, so put back in db
-			# db_insert_response = insert_metavarset_dynamodb(metavar_json)
-			# if confirm_db_response(db_delete_response, 'created', metavar_json['ds_id']): #es failed, db passed but then successfully put back in db, delete failed but datastores consistant, fail loudly
 			if insert_metavarset_dynamodb(metavar_json): #es failed, db passed but then successfully put back in db, delete failed but datastores consistant, fail loudly
 				raise kobaza_error.MetavarsetDatastoreOperationFailedError(ds_id, 'delete')
 			else: # put back in db failed, metavarset does not exist on db but does on es, raise alarm
 				raise kobaza_error.DataStoreInconsistantError(True, False)
 	else: #db delete failed, fail loudly
 		raise kobaza_error.MetavarsetDatastoreOperationFailedError(ds_id, 'delete')
+
+
+### data upload functions
+
+def is_allowed_file(filename: str) -> bool:
+	return '.' in filename and filename.rsplit('.', 1)[-1].lower() in ALLOWED_EXTENSIONS
+
+
+def get_numvars_in_uploaded_mv(metavars_upload_form:dict) -> int:
+	'''
+	gets the num of vars in an uploaded metavar dict
+	'''
+	num_var_names = sum(list(map(lambda x: x[:7] == 'varname', list(metavars_upload_form.keys()))))
+	num_var_descs = sum(list(map(lambda x: x[:7] == 'vardesc', list(metavars_upload_form.keys()))))
+	try:
+		assert num_var_names == num_var_descs
+		num_vars = num_var_names
+	except AssertionError:
+		raise kobaza_error.UploadedVarsNamesAndDescsCountsUnequalError(num_var_names, num_var_descs)
+	return num_vars
+
+
+def parse_uploaded_metavarset_form(mv_form: dict) -> dict:
+	'''
+	turns the form from the metavar uplaod ($mv_form) to a dict in the same format as the mv jsons
+	'''
+	#get num of vars, columns in data
+	num_vars = get_numvars_in_uploaded_mv(mv_form)
+
+	#get all vars and put names and descs in two lists
+	var_names = []
+	var_descs = []
+	for i in range(1, num_vars + 1):
+		var_names.append(mv_form[f'varname{i}'])
+		var_descs.append(mv_form[f'vardesc{i}'])
+	
+	#get unique id both for the metavarset and to append to filename to make it unique
+	ds_id = str(uuid.uuid4())
+
+	#construct standard format metavarset json for uploaded metavarset
+	uploaded_metavars_json = {
+		'ds_id': ds_id,
+		'name': mv_form['name'], 
+		'ds_source': mv_form['ds_source'], 
+		'last updated': mv_form['last updated'],
+		'meta-attributes': {
+			'context': {
+				'domain': mv_form['domain'],
+				'process': mv_form['process'],
+				'situation': mv_form['situation']
+			},
+			'variables': {
+				'variable_names': var_names,
+				'variable_descriptions': var_descs
+			},
+			'size': {
+				'rows': mv_form['rows'],
+				'description': mv_form['description']
+			}				
+		}
+	}
+
+	return uploaded_metavars_json
+
+
+def save_uploaded_metavarset_json():
+	'''
+	handle permanent storage of uploaded metavarset
+	'''
+	#just yeet it for now
+	pass
+	return
+
+
+def save_uploaded_dataset_file():
+	'''
+	handle permanent storage of uploaded dataset
+	'''
+	#just yeet it for now
+	pass
+	return
+
+
+def save_uploaded_dataset(dataset_file:werkzeug.datastructures.FileStorage):
+	'''
+	driver for saving entire dataset 
+	'''
+	dataset_filename = secure_filename(dataset_file.filename)
+	save_uploaded_metavarset_json()
+	save_uploaded_dataset_file()
+	return
+
+
+
+
+
+
+
+
+
+

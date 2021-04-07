@@ -1,21 +1,31 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        {% block title %} {% endblock %}
-        <link rel="stylesheet" type="text/css" href={{ url_for("static", filename="css/base.css") }}>
-    </head>
-    <body>
-        <div class="topnav">
-            <a class="navbutton" href={{ url_for('main') }}>Kobaza</a>
-            <div class="topnav-centered">
-                <form action={{ url_for('search_ds') }} method="POST">
-                    <input type="text" name="searchbar" placeholder="Search">
-                </form>
-            </div>
-        </div>
-        <div class="content">
-            {% block content %} {% endblock %}
-        </div>
-    </body>
+	<head>
+		{% block title %} {% endblock %}
+		<link rel="stylesheet" type="text/css" href={{ url_for("static", filename="css/base.css") }}>
+	</head>
+	<body>
+		<div class="topnav">
+			<a class="navbutton" id='home_button' href={{ url_for('main') }}>Kobaza</a>
+			<div class="topnav-centered">
+				<form action={{ url_for('search_ds') }} method="POST">
+					<input type="text" name="searchbar" placeholder="Search">
+				</form>
+			<a class="navbutton" id='upload_button' href={{ url_for('upload_dataset') }}>Upload</a>
+			</div>
+		</div>
+		<div class="content">
+			{% with messages = get_flashed_messages() %}
+				{% if messages %}
+					<ul class="flashes">
+					{% for message in messages %}
+						<li><p>{{ message }}</p></li>
+					{% endfor %}
+					</ul>
+				{% endif %}
+			{% endwith %}
+			{% block content %} {% endblock %}
+		</div>
+	</body>
 </html>
-    
+	
