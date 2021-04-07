@@ -60,12 +60,12 @@ def search_ds():
 
 @app.route('/upload_dataset/', methods = ['GET', 'POST'])
 @app.route('/upload_dataset/<int:vars>', methods = ['GET', 'POST'])
-def upload_dataset(vars:int = 1):
+def upload_dataset(vars:int = 1, allowed_filetypes = data_access.ALLOWED_EXTENSIONS):
 	prefilled_metavars = {}
 	if request.method == 'POST':
 		prefilled_metavars = dict(request.form)
 		# vars = data_access.get_numvars_in_uploaded_mv(prefilled_metavars) + 1
-	return render_template('metavar_upload.html', vars = vars, prefilled_metavars = prefilled_metavars)
+	return render_template('metavar_upload.html', vars = vars, prefilled_metavars = prefilled_metavars, allowed_filetypes = allowed_filetypes)
 
 
 @app.route('/dataset_uploaded', methods = ['POST'])

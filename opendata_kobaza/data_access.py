@@ -21,7 +21,7 @@ import werkzeug
 import kobaza_error
 import search_kobaza
 
-ALLOWED_EXTENSIONS = {'csv', 'tsv'}
+ALLOWED_EXTENSIONS = ['csv', 'tsv']
 DS_FOLDER = os.path.join(app.root_path, 'datasets', 'sets')
 
 aws_db_service = 'dynamodb'

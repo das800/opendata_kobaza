@@ -6,8 +6,8 @@
 	<h1>Dataset Upload:</h1>
 	<div class='data_upload_form'>
 		<form action={{ url_for('handle_dataset_upload') }} method="POST" enctype = "multipart/form-data">
-			<label for="raw_file"><p><b>File:</b></p></label>
-			<input type="file" id="raw_file" name="raw_file" required="required">
+			<label for="raw_file"><p><b>File:</b> (allowed file extensions: {{ ', '.join(allowed_filetypes) }})</p></label>
+			<input type="file" id="raw_file" name="raw_file">
 			<h2>Basic Meta-attributes:</h2>
 				<label for="name"><p><b>Name:</b> What is the name of this dataset?</p></label>
 				<input type="text" id="name" name="name" placeholder="enter here ..."{{ ' value=' + prefilled_metavars['name'] if prefilled_metavars['name'] else '' }} required="required"><br><br>
