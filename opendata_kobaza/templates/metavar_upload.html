@@ -23,6 +23,11 @@
 					<textarea id="process" name="process" rows="4" cols="50" placeholder="enter here ..." required="required">{{ prefilled_metavars['process'] if prefilled_metavars['process'] else '' }}</textarea><br><br>
 					<label for="situation"><p><b>Situation:</b> What other things define the situation or environment under which this data was produced? e.g. location, entities involved, time period etc.</p></label>
 					<textarea id="situation" name="situation" rows="4" cols="50" placeholder="enter here ..." required="required">{{ prefilled_metavars['situation'] if prefilled_metavars['situation'] else '' }}</textarea><br><br>
+				<h3>Size:</h3>
+					<label for="rows"><p><b>Number of Datapoints:</b> How many data points (i.e. rows, images, documents) are in this dataset?</p></label>
+					<input type="number" id="rows" name="rows" placeholder="enter here ..."{{ ' value=' + prefilled_metavars['rows'] if prefilled_metavars['rows'] else '' }} required="required"><br><br>
+					<label for="description"><p><b>Description:</b> misc. information about the size of the dataset. unit of number above; sparsity or fullness of data; resolution of dimensions etc.</p></label>
+					<textarea id="description" name="description" rows="4" cols="50" placeholder="enter here ..." required="required">{{ prefilled_metavars['description'] if prefilled_metavars['description'] else '' }}</textarea><br><br>
 				<h3>Variables:</h3>
 					{% for i in range(1, vars + 1) %}
 						<label for="varname{{ i }}"><p><b>Variable #{{ i }} Name:</b> What is the name of this variable?</p></label>
@@ -30,12 +35,7 @@
 						<label for="vardesc{{ i }}"><p><b>Variable #{{ i }} Description:</b> What is this variable? Is it a fact or dimension? What information does it encode? How is it parsed?</p></label>
 						<textarea id="vardesc{{ i }}" name="vardesc{{ i }}" rows="4" cols="50" placeholder="enter here ..." required="required">{{ prefilled_metavars['vardesc%s' % i] if prefilled_metavars['vardesc%s' % i] else '' }}</textarea><br><br>
 					{% endfor %}
-					<button type='submit' id='add_var_button' formaction={{ url_for('upload_dataset', vars = vars + 1) }}><p>add variable</p></button>
-				<h3>Size:</h3>
-					<label for="rows"><p><b>Number of Datapoints:</b> How many data points (i.e. rows, images, documents) are in this dataset?</p></label>
-					<input type="number" id="rows" name="rows" placeholder="enter here ..."{{ ' value=' + prefilled_metavars['rows'] if prefilled_metavars['rows'] else '' }} required="required"><br><br>
-					<label for="description"><p><b>Description:</b> misc. information about the size of the dataset. unit of number above; sparsity or fullness of data; resolution of dimensions etc.</p></label>
-					<textarea id="description" name="description" rows="4" cols="50" placeholder="enter here ..." required="required">{{ prefilled_metavars['description'] if prefilled_metavars['description'] else '' }}</textarea><br><br>
+					<button type='submit' id='add_var_button' formaction={{ url_for('upload_dataset', vars = vars + 1) }}><p>add variable</p></button><br><br>
 			<input type="submit" id='submit_matavars' value="Submit">
 		</form>
 	</div>
