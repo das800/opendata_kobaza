@@ -28,8 +28,11 @@ class EsQueryHit():
 
 def parse_search_response(response):
 	'''parses the elasticsearch query $response into a workable form'''
-	hits = response['hits']['hits']
-	
+	try:
+		hits = response['hits']['hits']
+	except KeyError: #no results
+		return []
+
 	query_results = []
 	for hit in hits:
 		query_results.append(EsQueryHit(hit['_source']['ds_id'], hit['_source']['name']))

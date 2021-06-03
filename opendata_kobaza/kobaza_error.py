@@ -5,6 +5,8 @@ Dayan Siddiqui
 purpose: implement custom errors
 '''
 
+import subprocess
+
 class DataStoreInconsistantError(Exception):
 	'''
 	custom error to store how the datastores are inconsistant, which are ok and which are not
@@ -45,7 +47,7 @@ class MetavarsetNotFoundError(Exception):
 		super().__init__(f'metavarset with id {self.ds_id} does not exist in datastore')
 
 
-class MetavarsetDatastoreOperationFailedError(Exception):
+class DatastoreOperationFailedError(Exception):
 	'''
 	custom error if metavarset does not exist in datastores
 	'''
@@ -78,3 +80,33 @@ class FileNotFoundInMetavarsetUploadError(Exception):
 	def __init__(self, file_input_name:str):
 		self.file_input_name = file_input_name
 		super().__init__(f"could not find key \'{file_input_name}\' in metavarset upload object")
+
+
+class SubprocessFailedError(Exception):
+	'''
+	custom error as catch all for when a subprocess fails
+	'''
+	def __init__(self, proc:subprocess.CompletedProcess, action):
+		self.proc = proc
+		self.action = action
+		super().__init__(f'while performing \'{action}\', following subprocess failed:\n{self.proc}')
+
+
+class DatasetFileNotFoundError(Exception):
+	'''
+	custom error for when a specified dataset file is not found at the specified location
+	'''
+	def __init__(self, file_name:str, location:str):
+		self.file_name = file_name
+		self.location = location
+		super().__init__(f'file \'{self.file_name}\' not found at \'{self.location}\'')
+
+class DatasetFileAlreadyExistsError(Exception):
+	'''
+	custom error when writing dataset over existing dataset but overwrite flag not set
+	'''
+	def __init__(self, file_name:str, location:str, is_same_file:bool = False):
+		self.file_name = file_name
+		self.location = location
+		self.is_same_file = is_same_file
+		super().__init__(f"file \'{self.file_name}\' already exists at \'{self.location}\' {'(existing file is identical to target, make sure to avoid redundant operations)' if self.is_same_file else'(if overwriting existing file, make sure explicit overwrite flag is set to True)'}")

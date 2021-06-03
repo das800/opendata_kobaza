@@ -2,7 +2,7 @@
 Dayan Siddiqui
 2021-02-20
 
-purpose: automated tests for app functionality
+purpose: automated tests for metavarsets
 '''
 
 import os
@@ -24,10 +24,45 @@ test cases:
 - insert different datasets for same id into both and run validity check
 '''
 
+#scp_storage test
+'''
+test cases
+- 1. insert a dataset not present in store (success)
+- 2. delete a dataset already present in store (success)
+- 3. insert a dataset already present in store (custom error)
+- 4. insert a dataset not present in app (custom error)
+- 5. delete a dataset not present in store (custom error)
+- 6. read a dataset not present in app (success)
+- 7. read a dataset already present in app (custom error)
+- 8. read a dataset not present in store (custom error)
+'''
+
 def vis_div():
 	print()
 	print('#' * 20)
 	print()
+
+
+
+def scp_storage_test(server_host, server_storage_path, local_storage_path):
+	server_host = 'datasets_kobaza'
+	server_storage_path = '/mnt/kobaza-dataset-store/data'
+	local_storage_path = '/home/dayan/code-bases/test'
+
+	# print(data_access.scp_data_storage_read('transfer-in-test.txt', server_host, server_storage_path, local_storage_path))
+
+	#test 1
+	assert data_access.scp_data_storage_write('transfer-out-test.txt', server_host, server_storage_path, local_storage_path)
+
+	#test 2
+	assert data_access.scp_data_storage_delete('transfer-out-test.txt', server_host, server_storage_path)
+
+	#test 3
+	data_access.scp_data_storage_write('transfer-out-test.txt', server_host, server_storage_path, local_storage_path)
+	assert data_access.scp_data_storage_write('transfer-out-test.txt', server_host, server_storage_path, local_storage_path)
+
+
+
 
 
 def check_datastore_validity(endpoint, username, password):
@@ -41,16 +76,6 @@ def check_datastore_validity(endpoint, username, password):
 	for id in list(db_ids | es_ids):
 		print(data_access.is_metavarset_present(endpoint, username, password, id))
 	print()
-
-
-
-def data_access_simple_insert_test(endpoint, username, password, metavar_json):
-	data_access.insert_metavarset(endpoint, username, password, metavar_json)
-
-
-
-def data_acces_simple_delete_test(endpoint,username, password, ds_id):
-	data_access.delete_metavarset(endpoint, username, password, ds_id)
 
 
 
@@ -70,7 +95,7 @@ def data_access_test(endpoint, username, password):
 	vis_div()
 	print('test 1: valid insert, success: nothing')
 	### insert valid dataset test
-	data_access_simple_insert_test(endpoint, username, password, db_ds)
+	data_access.insert_metavarset(endpoint, username, password, db_ds)
 	check_datastore_validity(endpoint, username, password)
 
 
@@ -78,7 +103,7 @@ def data_access_test(endpoint, username, password):
 	print('test 2: insert existing, success: print already exists error')
 	### insert same dataset again
 	try:
-		data_access_simple_insert_test(endpoint, username, password, db_ds)
+		data_access.insert_metavarset(endpoint, username, password, db_ds)
 	except kobaza_error.MetavarsetAlreadyPresentError as e:
 		print(e)
 	except Exception as e:
@@ -103,7 +128,7 @@ def data_access_test(endpoint, username, password):
 	vis_div()
 	print('test 4: simple delete, success: nothing')
 	### delete dataset
-	data_acces_simple_delete_test(endpoint, username, password, db_ds['ds_id'])
+	data_access.delete_metavarset(endpoint, username, password, db_ds['ds_id'])
 	check_datastore_validity(endpoint, username, password)
 
 
@@ -111,7 +136,7 @@ def data_access_test(endpoint, username, password):
 	print('test 5: delete nonexistant, success: print not found error')
 	### delete non existant dataset
 	try:
-		data_acces_simple_delete_test(endpoint, username, password, db_ds['ds_id'])
+		data_access.delete_metavarset(endpoint, username, password, db_ds['ds_id'])
 	except kobaza_error.MetavarsetNotFoundError as e:
 		print(e)
 	except Exception as e:
@@ -125,7 +150,7 @@ def data_access_test(endpoint, username, password):
 	invalid_ds = dict(db_ds)
 	del invalid_ds['meta-attributes']
 	try:
-		data_access_simple_insert_test(endpoint, username, password, invalid_ds)
+		data_access.insert_metavarset(endpoint, username, password, invalid_ds)
 	except kobaza_error.MetavarsetIsInvalid as e:
 		print(e)
 	except Exception as e:
@@ -171,9 +196,16 @@ def data_access_test(endpoint, username, password):
 def main():
 	endpoint, username, password = data_access.read_creds(os.path.join('.', 'security', 'kobaza_es_creds.txt'))
 
-	data_access_test(endpoint, username, password)
-	# data_access.delete_metavarset(endpoint, username, password, 'test_id')
-	print('\n final validity test')
-	check_datastore_validity(endpoint, username, password)
+	# data_access_test(endpoint, username, password)
+	# print('\n final validity test')
+	# check_datastore_validity(endpoint, username, password)
+
+
+	server_host = 'datasets_kobaza'
+	server_storage_path = '/mnt/kobaza-dataset-store/data'
+	local_storage_path = '/home/dayan/code-bases/test'
+
+	scp_storage_test(server_host, server_storage_path, local_storage_path)
+
 
 main()

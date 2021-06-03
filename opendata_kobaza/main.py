@@ -9,19 +9,23 @@ purpose: test out templating in flask by serving the meta vars of the 2 processe
 import json
 import os
 import uuid
-from flask import Flask, render_template, send_from_directory, request, redirect, url_for, flash
+from flask import Flask, render_template, send_from_directory, request, redirect, url_for, flash, after_this_request
 from werkzeug.utils import secure_filename
+import unicodedata
+import re
 
 app = Flask(__name__)
 
-# import my modules
+#softcode paths globally
+DS_FOLDER = os.path.join(app.root_path, 'datasets', 'sets')
+ES_CREDS_FILEPATH = os.path.join(app.root_path, 'security', 'kobaza_es_creds.txt')
+SCP_STORAGE_HOST_FILEPATH = os.path.join(app.root_path, 'security', 'kobaza_scp_host.txt')
+ALLOWED_EXTENSIONS = ['.csv', '.tsv']
+
+# import my modules after globals to prevent circular imports
 import search_kobaza
 import data_access
-
-#softcode paths globally
-# DS_FOLDER = os.path.join(app.root_path, 'datasets', 'sets')
-DS_FOLDER = data_access.DS_FOLDER
-ES_CREDS_FILEPATH = os.path.join(app.root_path, 'security', 'kobaza_es_creds.txt')
+import kobaza_error
 
 app.config['UPLOAD_FOLDER'] = DS_FOLDER
 app.secret_key = str(uuid.uuid4())
@@ -44,8 +48,20 @@ def dataset_page(ds_id):
 
 
 @app.route('/dl_dataset/<dataset_filename>')
-def dl_dataset(dataset_filename):
-	return send_from_directory(DS_FOLDER, dataset_filename)
+def dl_dataset(dataset_filename): #TODO make this get data set from scp storage
+	server_host, server_storage_path, _ = data_access.read_creds(SCP_STORAGE_HOST_FILEPATH)
+	if data_access.scp_data_storage_read(dataset_filename, server_host, server_storage_path, DS_FOLDER):
+		@after_this_request
+		def remove_file(response):
+			try:
+				os.remove(os.path.join(DS_FOLDER, dataset_filename))
+			except Exception as e:
+				app.logger.error("Error removing or closing downloaded file handle", e)
+				raise e
+			return response
+		return send_from_directory(DS_FOLDER, dataset_filename)
+	else:
+		return "download fialed" #TODO real error 
 
 
 @app.route('/dataset_search', methods = ['GET', 'POST'])
@@ -60,7 +76,7 @@ def search_ds():
 
 @app.route('/upload_dataset/', methods = ['GET', 'POST'])
 @app.route('/upload_dataset/<int:vars>', methods = ['GET', 'POST'])
-def upload_dataset(vars:int = 1, allowed_filetypes = data_access.ALLOWED_EXTENSIONS):
+def upload_dataset(vars:int = 1, allowed_filetypes = ALLOWED_EXTENSIONS):
 	prefilled_metavars = {}
 	if request.method == 'POST':
 		prefilled_metavars = dict(request.form)
@@ -68,9 +84,29 @@ def upload_dataset(vars:int = 1, allowed_filetypes = data_access.ALLOWED_EXTENSI
 	return render_template('metavar_upload.html', vars = vars, prefilled_metavars = prefilled_metavars, allowed_filetypes = allowed_filetypes)
 
 
+
+#to aid the uplaod function in cleaning filename
+def get_valid_filename(name):
+    """
+    Return the given string converted to a string that can be used for a clean
+    filename. Remove leading and trailing spaces; convert other spaces to
+    underscores; and remove anything that is not an alphanumeric, dash,
+    underscore, or dot.
+    >>> get_valid_filename("john's portrait in 2004.jpg")
+    'johns_portrait_in_2004.jpg'
+    """
+    s = str(name).strip().replace(' ', '_')
+    s = re.sub(r'(?u)[^-\w.]', '', s)
+    if s in {'', '.', '..'}:
+        raise ValueError(f"Could not derive file name from {s}")
+    return s
+
 @app.route('/dataset_uploaded', methods = ['POST'])
 def handle_dataset_upload():
 	file_input_form_name = 'raw_file'
+	es_endpoint, es_username, es_password = data_access.read_creds(ES_CREDS_FILEPATH)
+	scp_hostname, scp_server_path, _ = data_access.read_creds(SCP_STORAGE_HOST_FILEPATH)
+	scp_local_path = DS_FOLDER
 
 	if request.method == 'POST':
 		#handle metavarset
@@ -90,15 +126,19 @@ def handle_dataset_upload():
 			flash('Wrong filetype selected. Please upload a valid filetype')
 			return redirect(url_for('upload_dataset', vars = data_access.get_numvars_in_uploaded_mv(form_metavars)), code = 307)
 			
-		# checks passed now process file TODO process file
+		#create dataset filename by using ds id and uploaded files name
 		dataset_filename = secure_filename(dataset_file.filename)
-		print(dataset_filename)
-		print(dataset_file)
-		print(type(dataset_file))
-	# 	dataset_file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-	# 	return redirect(url_for('uploaded_file', filename=filename))
+		dataset_filename = get_valid_filename(dataset_filename)
+		dataset_filename = f"{uploaded_metavars_json['ds_id']}__{dataset_filename}" #prepend id to make filename unique
+		uploaded_metavars_json['raw data file'] = dataset_filename
+		uploaded_metavars_json['cleaned data file'] = dataset_filename
 
-	return render_template('test.html', output = "upload feature back-end has not been implemented yet. no data has been uploaded")
+		#upload dataset first
+		dataset_file.save(os.path.join(scp_local_path, dataset_filename))
+
+		data_access.insert_dataset_and_metavars(es_endpoint, es_username, es_password, scp_hostname, scp_server_path, scp_local_path, dataset_filename, uploaded_metavars_json)
+		return render_template('test.html', output = f"Your dataset {uploaded_metavars_json['name']} has been uploaded (id: {uploaded_metavars_json['ds_id']})") #TODO make another upload confirmation page
+
 
 
 #misc

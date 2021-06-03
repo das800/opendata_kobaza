@@ -9,20 +9,20 @@ reqs: needs aws cli to be installed and configured in the same env to work prope
 ###with aws dynamobd (make sure aws cli is installed and configured)
 import json
 import os
-from main import app
+from main import app, ALLOWED_EXTENSIONS
 import requests
 import boto3
 import uuid
 from boto3.dynamodb.conditions import Key, Attr
-from werkzeug.utils import secure_filename
 import werkzeug
+import subprocess
+import re
+from typing import List
+import pathlib
 
 #custom imports
 import kobaza_error
 import search_kobaza
-
-ALLOWED_EXTENSIONS = ['csv', 'tsv']
-DS_FOLDER = os.path.join(app.root_path, 'datasets', 'sets')
 
 aws_db_service = 'dynamodb'
 aws_region_id = 'eu-central-1'
@@ -48,64 +48,42 @@ def is_valid_metavarset(metavar_json, verbose = False):
 	'''
 	validates that $metavar_json is the correct format for metavar json
 	'''
+	invalidities = []
 	if not isinstance(metavar_json, dict):
-		if verbose:
-			print(1)
-		return False
-	elif not (set(metavar_json.keys()) == {'meta-attributes', 'ds_id', 'raw data file', 'ds_source', 'last updated', 'name', 'cleaned data file'}):
-		if verbose:
-			print(2)
-		return False
-	elif not isinstance(metavar_json['meta-attributes'], dict):
-		if verbose:
-			print(3)
-		return False
-	elif not (set(metavar_json['meta-attributes'].keys()) == {'context', 'size', 'variables'}):
-		if verbose:
-			print(4)
-		return False
-	elif not isinstance(metavar_json['meta-attributes']['context'], dict):
-		if verbose:
-			print(5)
-		return False
-	elif not (set(metavar_json['meta-attributes']['context'].keys()) == {'process', 'situation', 'domain'}):
-		if verbose:
-			print(6)
-		return False
-	elif not isinstance(metavar_json['meta-attributes']['size'], dict):
-		if verbose:
-			print(7)
-		return False
-	elif not (set(metavar_json['meta-attributes']['size'].keys()) == {'rows', 'description'}):
-		if verbose:
-			print(8)
-		return False
-	elif not isinstance(metavar_json['meta-attributes']['variables'], dict):
-		if verbose:
-			print(9)
-		return False
-	elif not (set(metavar_json['meta-attributes']['variables'].keys()) == {'variable_names', 'variable_descriptions'}):
-		if verbose:
-			print(10)
-		return False
-	elif not (isinstance(metavar_json['meta-attributes']['context']['process'], str) & isinstance(metavar_json['meta-attributes']['context']['situation'], str) & isinstance(metavar_json['meta-attributes']['context']['domain'], str)):
-		if verbose:
-			print(11)
-		return False
-	elif not (isinstance(metavar_json['meta-attributes']['size']['rows'], int) & isinstance(metavar_json['meta-attributes']['size']['description'], str)):
-		if verbose:
-			print(12)
-		return False
-	elif not (isinstance(metavar_json['meta-attributes']['variables']['variable_names'], list) & isinstance(metavar_json['meta-attributes']['variables']['variable_descriptions'], list)):
-		if verbose:
-			print(13)
-		return False
-	elif not (len(metavar_json['meta-attributes']['variables']['variable_names']) == len(metavar_json['meta-attributes']['variables']['variable_descriptions'])):
-		if verbose:
-			print(14)
-		return False
+		invalidities.append(1)
+	if not (set(metavar_json.keys()) == {'meta-attributes', 'ds_id', 'raw data file', 'ds_source', 'last updated', 'name', 'cleaned data file'}):
+		invalidities.append(2)
+	if not isinstance(metavar_json['meta-attributes'], dict):
+		invalidities.append(3)
+	if not (set(metavar_json['meta-attributes'].keys()) == {'context', 'size', 'variables'}):
+		invalidities.append(4)
+	if not isinstance(metavar_json['meta-attributes']['context'], dict):
+		invalidities.append(5)
+	if not (set(metavar_json['meta-attributes']['context'].keys()) == {'process', 'situation', 'domain'}):
+		invalidities.append(6)
+	if not isinstance(metavar_json['meta-attributes']['size'], dict):
+		invalidities.append(7)
+	if not (set(metavar_json['meta-attributes']['size'].keys()) == {'rows', 'description'}):
+		invalidities.append(8)
+	if not isinstance(metavar_json['meta-attributes']['variables'], dict):
+		invalidities.append(9)
+	if not (set(metavar_json['meta-attributes']['variables'].keys()) == {'variable_names', 'variable_descriptions'}):
+		invalidities.append(10)
+	if not (isinstance(metavar_json['meta-attributes']['context']['process'], str) & isinstance(metavar_json['meta-attributes']['context']['situation'], str) & isinstance(metavar_json['meta-attributes']['context']['domain'], str)):
+		invalidities.append(11)
+	if not (isinstance(metavar_json['meta-attributes']['size']['rows'], int) & isinstance(metavar_json['meta-attributes']['size']['description'], str)):
+		invalidities.append(12)
+	if not (isinstance(metavar_json['meta-attributes']['variables']['variable_names'], list) & isinstance(metavar_json['meta-attributes']['variables']['variable_descriptions'], list)):
+		invalidities.append(13)
+	if not (len(metavar_json['meta-attributes']['variables']['variable_names']) == len(metavar_json['meta-attributes']['variables']['variable_descriptions'])):
+		invalidities.append(14)
 
-	return True
+	if invalidities:
+		if verbose:
+			print(invalidities)
+		return False
+	else:
+		return True
 
 
 
@@ -218,8 +196,6 @@ def delete_metavarset_dynamodb(ds_id):
 	'''
 	response = table.delete_item(Key = {'ds_id': ds_id})
 	return confirm_db_response(response, 'deleted', ds_id)
-	return response
-
 
 
 
@@ -229,15 +205,18 @@ def delete_metavarset_dynamodb(ds_id):
 def read_creds(filename):
 	'''
 	reads elasticsearch creds from $filename assuming 1st, 2nd, 3rd lines are endpoint, u, and p respectively
+	reads creds and host name:
+	- for elasticsearch, expects 1st, 2nd, and 3rd lines to be endpoint, username and password respectively and return in same order
+	- for scp store, expects 1st, 2nd, and 3rd lines to be server hostname, server storage path, and local storage path respectively
 	'''
 	with open(filename, 'r') as creds_fh:
-		endpoint = creds_fh.readline().strip()
-		username = creds_fh.readline().strip()
-		password = creds_fh.readline().strip()
-	return endpoint, username, password
+		line1 = creds_fh.readline().strip()
+		line2 = creds_fh.readline().strip()
+		line3 = creds_fh.readline().strip()
+	return line1, line2, line3
 
 
-def elasticsearch_curl(es_endpoint, es_username, es_password, json_body = '', verb = 'get'):
+def elasticsearch_curl(es_endpoint:str, es_username:str, es_password:str, json_body = '', verb = 'get'):
 	'''constructs curl like command from requests library, $json_body must be string representing json'''
 
 	# pass header option for content type if request has a body to avoid Content-Type error in Elasticsearch v6.0
@@ -271,7 +250,7 @@ def elasticsearch_curl(es_endpoint, es_username, es_password, json_body = '', ve
 	return resp_text
 
 
-def get_item_by_ds_id_elasticsearch(endpoint, username, password, ds_id):
+def get_item_by_ds_id_elasticsearch(endpoint:str, username:str, password:str, ds_id):
 	'''
 	returns the source of the metavarset with $ds_id, false if it was not found
 	'''
@@ -284,7 +263,7 @@ def get_item_by_ds_id_elasticsearch(endpoint, username, password, ds_id):
 		raise kobaza_error.MetavarsetNotFoundError(ds_id)
 
 
-def get_all_items_elasticsearch(endpoint, username, password):
+def get_all_items_elasticsearch(endpoint:str, username:str, password:str):
 	'''
 	list all the ids in the es index "metavars"
 	'''
@@ -298,13 +277,13 @@ def get_all_items_elasticsearch(endpoint, username, password):
 	
 	return search_kobaza.parse_search_response(response)
 
-def list_indices(endpoint, username, password):
+def list_indices(endpoint:str, username:str, password:str):
 	'''
 	get all indices from es $endpoint
 	'''
 	return elasticsearch_curl(f'{endpoint}_cat/indices?v', username, password)
 
-def confirm_es_response(endpoint, username, password, response, purpose):
+def confirm_es_response(endpoint:str, username:str, password:str, response, purpose):
 	'''
 	confirms whether es $response resulted in the $purpose 
 	param:
@@ -331,7 +310,7 @@ def confirm_es_response(endpoint, username, password, response, purpose):
 	else:
 		return False
 
-def insert_metavarset_elasticsearch(endpoint, username, password, metavar_json):
+def insert_metavarset_elasticsearch(endpoint:str, username:str, password:str, metavar_json):
 	'''
 	insert $metavar_json into es $endpoint
 	'''
@@ -343,7 +322,7 @@ def insert_metavarset_elasticsearch(endpoint, username, password, metavar_json):
 		raise kobaza_error.MetavarsetIsInvalid(metavar_json)
 	return confirm_es_response(endpoint, username, password, response, 'created')
 
-def delete_metavarset_elasticsearch(endpoint, username, password, ds_id):
+def delete_metavarset_elasticsearch(endpoint:str, username:str, password:str, ds_id):
 	'''
 	delete metavarset with id $ds_id from elasticsearch
 	'''
@@ -351,9 +330,9 @@ def delete_metavarset_elasticsearch(endpoint, username, password, ds_id):
 	return confirm_es_response(endpoint, username, password, response, 'deleted')
 
 
-### GENERAL DATA FUNCTIONS
+### GENERAL METAVARSET FUNCTIONS
 
-def is_metavarset_present(endpoint, username, password, ds):
+def is_metavarset_present(endpoint:str, username:str, password:str, ds):
 	'''
 	checks if metavarset ($ds) is present in the datastores and raises appropriate errors on inconsistancy
 	params:
@@ -361,14 +340,14 @@ def is_metavarset_present(endpoint, username, password, ds):
 	return:
 		tuple with 2 bools for db and es being present in that order
 	'''
-	if is_valid_metavarset(ds):
-		metavar_json = ds
-		ds_id = ds['ds_id']
-	elif isinstance(ds, str):
+	if isinstance(ds, str):
 		metavar_json = {}
 		ds_id = ds
+	elif is_valid_metavarset(ds):
+		metavar_json = ds
+		ds_id = ds['ds_id']
 	else:
-		raise Exception('input is neither a string or valid metavarset')
+		raise ValueError('input is neither a string or valid metavarset')
 		
 	try:
 		metavar_json_in_db = get_item_by_ds_id_dynamodb(ds_id)
@@ -379,6 +358,7 @@ def is_metavarset_present(endpoint, username, password, ds):
 		metavar_json_in_es = get_item_by_ds_id_elasticsearch(endpoint, username, password, ds_id)
 	except kobaza_error.MetavarsetNotFoundError as e:
 		metavar_json_in_es = False
+
 
 	db = False
 	es = False
@@ -421,17 +401,17 @@ def is_metavarset_present(endpoint, username, password, ds):
 		raise kobaza_error.DataStoreInconsistantError(True, True, ds_id)
 
 
-def insert_metavarset(endpoint, username, password, metavar_json):
+def insert_metavarset(endpoint:str, username:str, password:str, metavar_json):
 	'''
 	insert $metavar_json into both es and db, keep all data stores consistant, notify if they arent
 	''' 
 	metavar_json = jsonify(metavar_json)
-	if not is_valid_metavarset(metavar_json): #fail if metavarset not valid
+	if not is_valid_metavarset(metavar_json, True): #fail if metavarset not valid
 		raise kobaza_error.MetavarsetIsInvalid(metavar_json)
 
 	#check if dataset is already present, raise appropriate errors
 	try:
-		present = is_metavarset_present(endpoint, username, password, metavar_json)
+		present = is_metavarset_present(endpoint, username, password, metavar_json['ds_id'])
 	except kobaza_error.DataStoreInconsistantError as e:
 		raise e
 	if present:
@@ -443,14 +423,14 @@ def insert_metavarset(endpoint, username, password, metavar_json):
 			return True
 		else: #es failed. delete from db
 			if delete_metavarset_dynamodb(metavar_json['ds_id']): #es failed, db passed but then successfully deleted from db, insert failed but datastores consistant, fail loudly
-				raise kobaza_error.MetavarsetDatastoreOperationFailedError(metavar_json['ds_id'], 'insert')
+				raise kobaza_error.DatastoreOperationFailedError(metavar_json['ds_id'], 'insert')
 			else: # delete on db failed, metavarset exists on db but not es, raise alarm
 				raise kobaza_error.DataStoreInconsistantError(True, False)
 	else: #db create failed, fail loudly
-		raise kobaza_error.MetavarsetDatastoreOperationFailedError(metavar_json['ds_id'], 'insert')
+		raise kobaza_error.DatastoreOperationFailedError(metavar_json['ds_id'], 'insert')
 
 
-def delete_metavarset(endpoint, username, password, ds_id):
+def delete_metavarset(endpoint:str, username:str, password:str, ds_id):
 	'''
 	delete metavarset with $ds_id from both es and db
 	'''
@@ -482,10 +462,117 @@ def delete_metavarset(endpoint, username, password, ds_id):
 		raise kobaza_error.MetavarsetDatastoreOperationFailedError(ds_id, 'delete')
 
 
+### scp data storage interface function
+
+def custom_cmd(cmd_lst:List[str], action:str, server_host:str = '') -> subprocess.CompletedProcess:
+	'''
+	purpose: run a shell command with params $cmd_lst, locally if $server_host is not specified, purpose of command is $action
+	output: succesfully finished proc object, kobaza_error.SubprocessFailedError if process failed
+	'''
+	if server_host:
+		finished_proc = subprocess.run(['ssh', server_host, *cmd_lst], text = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+	else:
+		finished_proc = subprocess.run(cmd_lst, text = True, stdout = subprocess.PIPE, stderr = subprocess.PIPE)
+	if finished_proc.returncode:
+		raise kobaza_error.SubprocessFailedError(finished_proc, action)
+	return finished_proc
+
+
+def scp_data_storage_file_exists(file_name:str, storage_path:str, server_host:str = '') -> bool:
+	'''check for file existance at path. leave server blank to check local'''
+	ls = custom_cmd(['ls', storage_path], server_host = server_host, action = 'check file existance')
+	return file_name in ls.stdout
+
+
+def scp_data_storage_validate_file_checksum(file_name:str, server_host:str, server_storage_path:str, local_storage_path:str) -> bool:
+	'''
+	purpose: check $file_name at both $local_storage_path and $server_host:$server_storage_path to see if their checksum matches
+	output: boolean of files matching at both locations, kobaza_error.SubprocessFailedError if file does not exist at either location
+	'''
+	# if not scp_data_storage_file_exists(file_name, server_storage_path, server_host):
+	# 	raise kobaza_error.DatasetFileNotFoundError(file_name, f'{server_host}:{server_storage_path}')
+	# if not scp_data_storage_file_exists(file_name, local_storage_path):
+	# 	raise kobaza_error.DatasetFileNotFoundError(file_name, local_storage_path)
+
+	server_checksum = custom_cmd(['sha1sum', os.path.join(server_storage_path, file_name)], server_host = server_host, action = 'get sha checksum on server')
+	local_checksum = custom_cmd(['sha1sum', os.path.join(local_storage_path, file_name)], action = 'get sha checksum on local')
+
+	pattern = '^([\d\w]+) .+$'
+	server_checksum = re.match(pattern, server_checksum.stdout).group(1)
+	local_checksum = re.match(pattern, local_checksum.stdout).group(1)
+	return server_checksum == local_checksum
+
+
+def custom_scp(direction:str, file_name:str, server_host:str, server_storage_path:str, local_storage_path:str) -> bool:
+	'''
+	function: perform scp between server and local. direction 'in' is from server to local, 'out' is vice versa, 
+	output: bool of files matching at source and destination, ValueError if direction is not valid, kobaza_error.DatasetFileNotFoundError if source file not found
+	'''
+	direction_vals = ['in', 'out']
+	if direction not in direction_vals:
+		raise ValueError(f'parameter \'direction\' must be one of {direction_vals}, instead got {direction}')
+
+	if direction == direction_vals[0]: #in
+		if scp_data_storage_file_exists(file_name, server_storage_path, server_host):
+			custom_cmd(['scp', f'{server_host}:{os.path.join(server_storage_path, file_name)}', local_storage_path], action = 'scp-ing file from server to local')
+		else:
+			raise kobaza_error.DatasetFileNotFoundError(file_name, f'{server_host}:{server_storage_path}')
+	elif direction == direction_vals[1]: #out
+		if scp_data_storage_file_exists(file_name, local_storage_path):
+			custom_cmd(['scp', os.path.join(local_storage_path, file_name), f'{server_host}:{server_storage_path}'], action = 'scp-ing file from local to server')
+		else:
+			raise kobaza_error.DatasetFileNotFoundError(file_name, local_storage_path)
+	
+	return scp_data_storage_validate_file_checksum(file_name, server_host, server_storage_path, local_storage_path)
+
+
+def scp_data_storage_read(file_name:str, server_host:str, server_storage_path:str, local_storage_path:str) -> bool:
+	'''storage read'''
+	if not scp_data_storage_file_exists(file_name, server_storage_path, server_host):
+		raise kobaza_error.DatasetFileNotFoundError(file_name, f'{server_host}:{server_storage_path}')
+
+	if scp_data_storage_file_exists(file_name, local_storage_path): # file with same name exists at local location
+		if scp_data_storage_validate_file_checksum(file_name, server_host, server_storage_path, local_storage_path): # file is the same
+			raise kobaza_error.DatasetFileAlreadyExistsError(file_name, local_storage_path, True)
+		else: #file is not the same
+			return custom_scp('in', file_name, server_host, server_storage_path, local_storage_path)
+	else:
+		return custom_scp('in', file_name, server_host, server_storage_path, local_storage_path)
+
+
+
+def scp_data_storage_write(file_name:str, server_host:str, server_storage_path:str, local_storage_path:str, overwrite:bool = False) -> bool:
+	'''storage create and update, must specify overwrite to replace existing file'''
+	if not scp_data_storage_file_exists(file_name, local_storage_path):
+		raise kobaza_error.DatasetFileNotFoundError(file_name, local_storage_path)
+
+	if scp_data_storage_file_exists(file_name, server_storage_path, server_host): # file with same name exists at same server location
+		if scp_data_storage_validate_file_checksum(file_name, server_host, server_storage_path, local_storage_path): # file is the same, fail loudly in case of unintended behavior 
+			raise kobaza_error.DatasetFileAlreadyExistsError(file_name, f'{server_host}:{server_storage_path}', True)
+		else: #file is not the same
+			if overwrite: #have permission to overwrite
+				return custom_scp('out', file_name, server_host, server_storage_path, local_storage_path)		
+			else:
+				raise kobaza_error.DatasetFileAlreadyExistsError(file_name, f'{server_host}:{server_storage_path}')
+	else:
+		return custom_scp('out', file_name, server_host, server_storage_path, local_storage_path)		
+
+
+def scp_data_storage_delete(file_name:str, server_host:str, server_storage_path:str) -> bool:
+	if not scp_data_storage_file_exists(file_name, server_storage_path, server_host):
+		raise kobaza_error.DatasetFileNotFoundError(file_name, f'{server_host}:{server_storage_path}') #fail loudly if the file isnt found
+
+	custom_cmd(['rm', os.path.join(server_storage_path, file_name)], server_host = server_host, action = 'delete dataset file on server')
+	
+	return not scp_data_storage_file_exists(file_name, server_storage_path, server_host)
+
+
+
 ### data upload functions
 
 def is_allowed_file(filename: str) -> bool:
-	return '.' in filename and filename.rsplit('.', 1)[-1].lower() in ALLOWED_EXTENSIONS
+	# return '.' in filename and filename.rsplit('.', 1)[-1].lower() in ALLOWED_EXTENSIONS
+	return pathlib.Path(filename).suffix in ALLOWED_EXTENSIONS
 
 
 def get_numvars_in_uploaded_mv(metavars_upload_form:dict) -> int:
@@ -517,7 +604,7 @@ def parse_uploaded_metavarset_form(mv_form: dict) -> dict:
 		var_descs.append(mv_form[f'vardesc{i}'])
 	
 	#get unique id both for the metavarset and to append to filename to make it unique
-	ds_id = str(uuid.uuid4())
+	ds_id = str(uuid.uuid1())
 
 	#construct standard format metavarset json for uploaded metavarset
 	uploaded_metavars_json = {
@@ -536,7 +623,7 @@ def parse_uploaded_metavarset_form(mv_form: dict) -> dict:
 				'variable_descriptions': var_descs
 			},
 			'size': {
-				'rows': mv_form['rows'],
+				'rows': int(mv_form['rows']),
 				'description': mv_form['description']
 			}				
 		}
@@ -545,35 +632,25 @@ def parse_uploaded_metavarset_form(mv_form: dict) -> dict:
 	return uploaded_metavars_json
 
 
-def save_uploaded_metavarset_json():
+def insert_dataset_and_metavars(endpoint:str, username:str, password:str, server_host:str, server_storage_path:str, local_storage_path:str, dataset_filename:str, uploaded_metavars_json:dict):
 	'''
-	handle permanent storage of uploaded metavarset
+	this is the create in the crud for the dataset-metavarset pair
 	'''
-	#just yeet it for now
-	pass
-	return
 
-
-def save_uploaded_dataset_file():
-	'''
-	handle permanent storage of uploaded dataset
-	'''
-	#just yeet it for now
-	pass
-	return
-
-
-def save_uploaded_dataset(dataset_file:werkzeug.datastructures.FileStorage):
-	'''
-	driver for saving entire dataset 
-	'''
-	dataset_filename = secure_filename(dataset_file.filename)
-	save_uploaded_metavarset_json()
-	save_uploaded_dataset_file()
-	return
+	if scp_data_storage_write(dataset_filename, server_host,server_storage_path, local_storage_path): #dataset successfully stored, now store metavarset
+		try:
+			if insert_metavarset(endpoint, username, password, uploaded_metavars_json):
+				custom_cmd(['rm', os.path.join(local_storage_path, dataset_filename)], 'deleting dataset from local storage')
+				return
+		except (kobaza_error.DatastoreOperationFailedError, kobaza_error.DataStoreInconsistantError):
+			scp_data_storage_delete(dataset_filename, server_host, server_storage_path)
+			raise
+	else: #dataset failed to insert, fail loudly
+		raise kobaza_error.DatastoreOperationFailedError(uploaded_metavars_json['ds_id'], 'insert')
 
 
 
+#TODO add delete dataset and metavars function
 
 
 
