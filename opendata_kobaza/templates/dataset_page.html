@@ -3,20 +3,22 @@
 {% block title %} <title>Kobaza: {{metavars_dict['name']}} open dataset</title> {% endblock %}
 
 {% block content %}
-    <a href = {{ url_for('dl_dataset', dataset_filename = metavars_dict['cleaned data file']) }}>{{ "Download cleaned " + metavars_dict['name'] }}</a>
-    <br>
-    <a href = {{ url_for('dl_dataset', dataset_filename = metavars_dict['raw data file']) }}>{{ "Download raw " + metavars_dict['name'] }}</a>
-    <h1>Context</h1>
-    {% for context in metavars_dict['meta-attributes']['context'] %}
-        <h2>{{ context[0].upper() + context[1:] }}:</h2>
-        <p>{{ metavars_dict['meta-attributes']['context'][context] }}</p>
-        <br>
-    {% endfor %}
+	<a id='dl_file' href={{ url_for('dl_dataset', dataset_filename=metavars_dict['cleaned data file']) }}>{{ "Download " + metavars_dict['name'] }}</a>
+	<br>
+	<!-- <a href={{ url_for('dl_dataset', dataset_filename=metavars_dict['cleaned data file']) }}>{{ "Download cleaned " + metavars_dict['name'] }}</a>
+	<br>
+	<a href={{ url_for('dl_dataset', dataset_filename=metavars_dict['raw data file']) }}>{{ "Download raw " + metavars_dict['name'] }}</a> -->
+	<h1>Context</h1>
+	{% for context in metavars_dict['meta-attributes']['context'] %}
+		<h2>{{ context[0].upper() + context[1:] }}:</h2>
+		<p>{{ metavars_dict['meta-attributes']['context'][context] }}</p>
+		<br>
+	{% endfor %}
 
-    <h1>Variables</h1>
-    {% for i in range(metavars_dict['meta-attributes']['variables']['variable_names']|length) %}
-        <h2>{{ metavars_dict['meta-attributes']['variables']['variable_names'][i] }}:</h2>
-        <p>{{ metavars_dict['meta-attributes']['variables']['variable_descriptions'][i] }}</p>
-        <br>    
-    {% endfor %}
+	<h1>Variables</h1>
+	{% for i in range(metavars_dict['meta-attributes']['variables']['variable_names']|length) %}
+		<h2>{{ metavars_dict['meta-attributes']['variables']['variable_names'][i] }}:</h2>
+		<p>{{ metavars_dict['meta-attributes']['variables']['variable_descriptions'][i] }}</p>
+		<br>    
+	{% endfor %}
 {% endblock %}
