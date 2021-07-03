@@ -29,7 +29,7 @@ import kobaza_error
 
 app.config['UPLOAD_FOLDER'] = DS_FOLDER
 app.secret_key = str(uuid.uuid4())
-
+app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
 
 
 
@@ -48,7 +48,7 @@ def dataset_page(ds_id):
 
 
 @app.route('/dl_dataset/<dataset_filename>')
-def dl_dataset(dataset_filename): #TODO make this get data set from scp storage
+def dl_dataset(dataset_filename): #TODO put webserver on scp server so it can serve datasets itself, and redirect this there.
 	server_host, server_storage_path, _ = data_access.read_creds(SCP_STORAGE_HOST_FILEPATH)
 	if data_access.scp_data_storage_read(dataset_filename, server_host, server_storage_path, DS_FOLDER):
 		@after_this_request
@@ -80,7 +80,7 @@ def upload_dataset(vars:int = 1, allowed_filetypes = ALLOWED_EXTENSIONS):
 	prefilled_metavars = {}
 	if request.method == 'POST':
 		prefilled_metavars = dict(request.form)
-		# vars = data_access.get_numvars_in_uploaded_mv(prefilled_metavars) + 1
+		print(prefilled_metavars)
 	return render_template('metavar_upload.html', vars = vars, prefilled_metavars = prefilled_metavars, allowed_filetypes = allowed_filetypes)
 
 
@@ -109,7 +109,7 @@ def handle_dataset_upload():
 	scp_local_path = DS_FOLDER
 
 	if request.method == 'POST':
-		#handle metavarset
+		#handle metavarset TODO why does this cut of name of dataset?
 		form_metavars = dict(request.form)
 		uploaded_metavars_json = data_access.parse_uploaded_metavarset_form(form_metavars)
 
@@ -136,8 +136,12 @@ def handle_dataset_upload():
 		#upload dataset first
 		dataset_file.save(os.path.join(scp_local_path, dataset_filename))
 
-		data_access.insert_dataset_and_metavars(es_endpoint, es_username, es_password, scp_hostname, scp_server_path, scp_local_path, dataset_filename, uploaded_metavars_json)
-		return render_template('test.html', output = f"Your dataset {uploaded_metavars_json['name']} has been uploaded (id: {uploaded_metavars_json['ds_id']})") #TODO make another upload confirmation page
+		data_access.insert_dataset_and_metavars(es_endpoint, es_username, es_password, scp_hostname, scp_server_path, scp_local_path, uploaded_metavars_json)
+		
+		#get uploaded metavarset from db for accuracy
+		uploaded_metavars_json_recieved = data_access.get_item_by_ds_id_dynamodb(uploaded_metavars_json['ds_id'])
+		
+		return render_template('upload_dataset_confirmation.html', uled_metavars_name = uploaded_metavars_json_recieved['name'], uled_metavars_id = uploaded_metavars_json_recieved['ds_id'], uled_metavars_json_str = json.dumps(uploaded_metavars_json_recieved, indent = 4))
 
 
 
@@ -147,7 +151,11 @@ def favicon():
 	return send_from_directory(os.path.join(app.root_path, 'static', 'img'), 'favicon.ico', mimetype = 'image/vnd.microsoft.icon')
 
 
-
+@app.route('/test')
+def test():
+	mv = {'a': 'aaaa', 'b': {'b1': 'bbb', 'b2': 'bbbbbb'}}
+	# return render_template('test.html', output = json.dumps(mv, indent = 4))
+	return render_template('upload_dataset_confirmation.html', uled_metavars_name = 'name', uled_metavars_id = 'ds_id', uled_metavars_json_str = json.dumps(mv, indent = 4))
 
 
 

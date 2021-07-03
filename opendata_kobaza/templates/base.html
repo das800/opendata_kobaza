@@ -14,7 +14,7 @@
 			<a class="navbutton" id='upload_button' href={{ url_for('upload_dataset') }}>Upload</a>
 			</div>
 		</div>
-		<div class="content">
+		<div class="content" id="content_div">
 			{% with messages = get_flashed_messages() %}
 				{% if messages %}
 					<ul class="flashes">

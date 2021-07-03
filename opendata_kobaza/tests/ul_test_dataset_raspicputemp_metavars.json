@@ -1,0 +1,26 @@
+{
+    "meta-attributes": {
+        "context": {
+            "process": "time series of device temps",
+            "situation": "raspberry pi with limited airflow, no heat sinks or fans, running a simple scp server, next to fan cooled external HDD",
+            "domain": "device maintenance"
+        },
+        "size": {
+            "rows": 20,
+            "description": "readings taken every second for a few seconds at a time"
+        },
+        "variables": {
+            "variable_names": [
+                "timestamp",
+                "temp"
+            ],
+            "variable_descriptions": [
+                "timestamp of temp reading",
+                "temp in celcius"
+            ]
+        }
+    },
+    "ds_source": "http://dksld",
+    "last updated": "2021-05-10",
+    "name": "raspi cpu temps"
+}

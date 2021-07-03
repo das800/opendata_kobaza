@@ -33,7 +33,7 @@ dynamodbclient = boto3.client(aws_db_service, region_name = aws_region_id)
 table = dynamodbres.Table(aws_dynamodb_tablename)
 
 
-
+#TODO add type hints to all functions
 
 #metavarset integrity functions
 def jsonify(js):
@@ -90,7 +90,7 @@ def is_valid_metavarset(metavar_json, verbose = False):
 
 ### DYNAMODB FUNCTIONS
 
-def get_item_by_ds_id_dynamodb(ds_id):
+def get_item_by_ds_id_dynamodb(ds_id: str) -> dict:
 	'''
 	retreives a single ds_metavar item by its $ds_id
 	'''
@@ -102,15 +102,6 @@ def get_item_by_ds_id_dynamodb(ds_id):
 		return response['Item']
 	else:
 		raise kobaza_error.MetavarsetNotFoundError(ds_id)
-
-
-# def get_item_by_ds_id_test(ds_id):
-# 	'''
-# 	retreives a single ds_metavar item by its $ds_id
-# 	'''
-# 	response = table.get_item(Key = {'ds_id': ds_id})
-# 	response['Item']['meta-attributes']['size']['rows'] = int(response['Item']['meta-attributes']['size']['rows'])
-# 	return json.dumps(response, indent = 4)
 
 
 def get_all_ds_ids_dynamodb():
@@ -133,7 +124,7 @@ def get_all_ds_ids_dynamodb():
 	return all_ds_ids
 
 
-def get_names_by_ds_ids_dynamodb(ds_ids):
+def get_names_by_ds_ids_dynamodb(ds_ids:List[str]) -> dict:
 	'''
 	takes in a list of $ds_ids and return a projection from the db of corresponding names
 	'''
@@ -392,18 +383,18 @@ def is_metavarset_present(endpoint:str, username:str, password:str, ds):
 			es_inconsistant = True
 
 	if db_inconsistant or es_inconsistant:
-		raise kobaza_error.DataStoreInconsistantError(db_inconsistant, es_inconsistant, ds_id)
+		raise kobaza_error.DataStoreInconsistantError(db_inconsistant = db_inconsistant, es_inconsistant = es_inconsistant, suspect_id = ds_id)
 	elif (not db) and (not es):
 		return False
 	elif db and es:
 		return True
 	else:
-		raise kobaza_error.DataStoreInconsistantError(True, True, ds_id)
+		raise kobaza_error.DataStoreInconsistantError(db_inconsistant = True, es_inconsistant = True, suspect_id = ds_id)
 
 
-def insert_metavarset(endpoint:str, username:str, password:str, metavar_json):
+def insert_metavarset(endpoint:str, username:str, password:str, metavar_json) -> bool:
 	'''
-	insert $metavar_json into both es and db, keep all data stores consistant, notify if they arent
+	insert $metavar_json into both es and db, keep all data stores consistant, notify if they arent, may raise following errors on failure (MetavarsetIsInvalid, DataStoreInconsistantError, MetavarsetAlreadyPresentError, DatastoreOperationFailedError)
 	''' 
 	metavar_json = jsonify(metavar_json)
 	if not is_valid_metavarset(metavar_json, True): #fail if metavarset not valid
@@ -425,14 +416,14 @@ def insert_metavarset(endpoint:str, username:str, password:str, metavar_json):
 			if delete_metavarset_dynamodb(metavar_json['ds_id']): #es failed, db passed but then successfully deleted from db, insert failed but datastores consistant, fail loudly
 				raise kobaza_error.DatastoreOperationFailedError(metavar_json['ds_id'], 'insert')
 			else: # delete on db failed, metavarset exists on db but not es, raise alarm
-				raise kobaza_error.DataStoreInconsistantError(True, False)
+				raise kobaza_error.DataStoreInconsistantError(db_inconsistant = True, es_inconsistant = False, suspect_id = metavar_json['ds_id'])
 	else: #db create failed, fail loudly
 		raise kobaza_error.DatastoreOperationFailedError(metavar_json['ds_id'], 'insert')
 
 
-def delete_metavarset(endpoint:str, username:str, password:str, ds_id):
+def delete_metavarset(endpoint:str, username:str, password:str, ds_id) -> bool:
 	'''
-	delete metavarset with $ds_id from both es and db
+	delete metavarset with $ds_id from both es and db, may raise following errors on failure (kobaza_error.DataStoreInconsistantError, kobaza_error.MetavarsetNotFoundError, kobaza_error.MetavarsetDatastoreOperationFailedError)
 	'''
 
 	#check if dataset is present, raise appropriate errors
@@ -457,7 +448,7 @@ def delete_metavarset(endpoint:str, username:str, password:str, ds_id):
 			if insert_metavarset_dynamodb(metavar_json): #es failed, db passed but then successfully put back in db, delete failed but datastores consistant, fail loudly
 				raise kobaza_error.MetavarsetDatastoreOperationFailedError(ds_id, 'delete')
 			else: # put back in db failed, metavarset does not exist on db but does on es, raise alarm
-				raise kobaza_error.DataStoreInconsistantError(True, False)
+				raise kobaza_error.DataStoreInconsistantError(db_inconsistant = True, es_inconsistant = False, suspect_id = ds_id)
 	else: #db delete failed, fail loudly
 		raise kobaza_error.MetavarsetDatastoreOperationFailedError(ds_id, 'delete')
 
@@ -542,7 +533,9 @@ def scp_data_storage_read(file_name:str, server_host:str, server_storage_path:st
 
 
 def scp_data_storage_write(file_name:str, server_host:str, server_storage_path:str, local_storage_path:str, overwrite:bool = False) -> bool:
-	'''storage create and update, must specify overwrite to replace existing file'''
+	'''
+	storage create and update, must specify overwrite to replace existing file 
+	'''
 	if not scp_data_storage_file_exists(file_name, local_storage_path):
 		raise kobaza_error.DatasetFileNotFoundError(file_name, local_storage_path)
 
@@ -559,6 +552,9 @@ def scp_data_storage_write(file_name:str, server_host:str, server_storage_path:s
 
 
 def scp_data_storage_delete(file_name:str, server_host:str, server_storage_path:str) -> bool:
+	'''
+	storage delete, may raise following errors on failure (DatasetFileNotFoundError)
+	'''
 	if not scp_data_storage_file_exists(file_name, server_storage_path, server_host):
 		raise kobaza_error.DatasetFileNotFoundError(file_name, f'{server_host}:{server_storage_path}') #fail loudly if the file isnt found
 
@@ -611,7 +607,7 @@ def parse_uploaded_metavarset_form(mv_form: dict) -> dict:
 		'ds_id': ds_id,
 		'name': mv_form['name'], 
 		'ds_source': mv_form['ds_source'], 
-		'last updated': mv_form['last updated'],
+		'last updated': mv_form['last_updated'], #TODO replace space with underscore (needs to be changed in database, not just here)
 		'meta-attributes': {
 			'context': {
 				'domain': mv_form['domain'],
@@ -632,26 +628,87 @@ def parse_uploaded_metavarset_form(mv_form: dict) -> dict:
 	return uploaded_metavars_json
 
 
-def insert_dataset_and_metavars(endpoint:str, username:str, password:str, server_host:str, server_storage_path:str, local_storage_path:str, dataset_filename:str, uploaded_metavars_json:dict):
+def insert_dataset_and_metavars(endpoint:str, username:str, password:str, server_host:str, server_storage_path:str, local_storage_path:str, uploaded_metavars_json:dict):
 	'''
 	this is the create in the crud for the dataset-metavarset pair
 	'''
+	dataset_filename = uploaded_metavars_json['cleaned data file']
+	ds_id = uploaded_metavars_json['ds_id']
 
-	if scp_data_storage_write(dataset_filename, server_host,server_storage_path, local_storage_path): #dataset successfully stored, now store metavarset
+	#TODO remove this after testing the code below
+	# if scp_data_storage_write(dataset_filename, server_host,server_storage_path, local_storage_path): #dataset successfully stored, now store metavarset
+	# 	try: 
+	# 		if insert_metavarset(endpoint, username, password, uploaded_metavars_json): #metavarset successfully stored, get rid of temp storage and done
+	# 			custom_cmd(['rm', os.path.join(local_storage_path, dataset_filename)], 'deleting dataset from local storage')
+	# 			return
+	# 	except (kobaza_error.MetavarsetIsInvalid, kobaza_error.DataStoreInconsistantError, kobaza_error.MetavarsetAlreadyPresentError, kobaza_error.DatastoreOperationFailedError) as e: #metavarset insert failed, remove from scp
+	# 		if scp_data_storage_delete(dataset_filename, server_host, server_storage_path): #dataset successfully deleted, everything consistant, raise metavarset error 
+	# 			raise e
+	# 		else: #dataset deletion failed, inconsistant, raise original metavarset error and another inconsistancy error
+	# 			raise Exception([e, kobaza_error.DataStoreInconsistantError(scp_inconsistant = True, suspect_id = uploaded_metavars_json['ds_id'])])
+	# else: #dataset failed to insert, fail loudly
+	# 	raise kobaza_error.DatastoreOperationFailedError(uploaded_metavars_json['ds_id'], 'insert')
+
+	if insert_metavarset(endpoint, username, password, uploaded_metavars_json): #metavarset successfully stored, now store dataset (delete metavarset does not return false so no else necessary)
+		is_scp_stored:bool = False #flag to check successful scp deletion
+		scp_failure_error = kobaza_error.DatastoreOperationFailedError(ds_id, 'insert')
 		try:
-			if insert_metavarset(endpoint, username, password, uploaded_metavars_json):
-				custom_cmd(['rm', os.path.join(local_storage_path, dataset_filename)], 'deleting dataset from local storage')
-				return
-		except (kobaza_error.DatastoreOperationFailedError, kobaza_error.DataStoreInconsistantError):
-			scp_data_storage_delete(dataset_filename, server_host, server_storage_path)
-			raise
-	else: #dataset failed to insert, fail loudly
-		raise kobaza_error.DatastoreOperationFailedError(uploaded_metavars_json['ds_id'], 'insert')
+			is_scp_stored = scp_data_storage_write(dataset_filename, server_host, server_storage_path, local_storage_path)
+		except Exception as e:
+			is_scp_stored = False
+			scp_failure_error = e
+		if is_scp_stored: #dataset successfully stored, return
+			custom_cmd(['rm', os.path.join(local_storage_path, dataset_filename)], 'deleting dataset from local storage')
+			return
+		else: #dataset insertion failed, delete inserted metavarset
+			try:
+				delete_metavarset(endpoint, username, password, ds_id) #metavarset redeleted successfully raise the appropriate insertion failure error
+			except Exception as e: #metavarset redeletion fialed, inconsistant, raise original metavarset error and another inconsistancy error
+				if isinstance(e, kobaza_error.DataStoreInconsistantError): #get correct inconsistancy
+					inconsistancy_error = kobaza_error.DataStoreInconsistantError(db_inconsistant = e.db_inconsistant, es_inconsistant = e.es_inconsistant, scp_inconsistant = True, suspect_id = ds_id)
+				else:
+					inconsistancy_error = kobaza_error.DataStoreInconsistantError(scp_inconsistant = True, suspect_id = ds_id)
+				raise Exception([inconsistancy_error, scp_failure_error])
+			raise scp_failure_error
 
 
 
-#TODO add delete dataset and metavars function
+# scp_data_storage_write(file_name:str, server_host:str, server_storage_path:str, local_storage_path:str, overwrite:bool = False) -> bool
+# insert_metavarset(endpoint:str, username:str, password:str, metavar_json) -> bool
 
+#TODO test this
+def delete_dataset_and_metavars(endpoint:str, username:str, password:str, server_host:str, server_storage_path:str, ds_id:str):
+	'''
+	this is the create in the crud for the dataset-metavarset pair
+	'''
+	ds_metavarset = get_item_by_ds_id_dynamodb(ds_id)
+	dataset_filename = ds_metavarset['cleaned data file']
+
+	if delete_metavarset(endpoint, username, password, ds_id): #metavarset successfully deleted, now delete dataset (delete metavarset does not return false so no else necessary)
+		is_scp_deleted:bool = False #flag to check successful scp deletion
+		scp_failure_error = kobaza_error.DatastoreOperationFailedError(ds_id, 'delete')
+		try:
+			is_scp_deleted = scp_data_storage_delete(dataset_filename, server_host, server_storage_path)
+		except Exception as e:
+			is_scp_deleted = False
+			scp_failure_error = e
+		if is_scp_deleted: #dataset successfully deleted, return
+			return
+		else: #dataset deletion failed, reinsert metavarset
+			try:
+				insert_metavarset(endpoint = endpoint, username = username, password = password, metavar_json = ds_metavarset) #metavarset reinserted successfully raise the appropriate deletion failure error
+			except Exception as e: #metavarset reinsertion fialed, inconsistant, raise original metavarset error and another inconsistancy error
+				if isinstance(e, kobaza_error.DataStoreInconsistantError): #get correct inconsistancy
+					inconsistancy_error = kobaza_error.DataStoreInconsistantError(db_inconsistant = e.db_inconsistant, es_inconsistant = e.es_inconsistant, scp_inconsistant = True, suspect_id = ds_id)
+				else:
+					inconsistancy_error = kobaza_error.DataStoreInconsistantError(scp_inconsistant = True, suspect_id = ds_id)
+				raise Exception([inconsistancy_error, scp_failure_error])
+			raise scp_failure_error
+
+
+
+# def scp_data_storage_delete(file_name:str, server_host:str, server_storage_path:str) -> bool:
+# def delete_metavarset(endpoint:str, username:str, password:str, ds_id) -> bool:
 
 
 

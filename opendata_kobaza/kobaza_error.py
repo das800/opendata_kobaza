@@ -11,11 +11,12 @@ class DataStoreInconsistantError(Exception):
 	'''
 	custom error to store how the datastores are inconsistant, which are ok and which are not
 	'''
-	def __init__(self, db_inconsistant, es_inconsistant, suspect_id = ''): #TODO add ds_id or list of that cause inconsistancy
+	def __init__(self, db_inconsistant = False, es_inconsistant = False, scp_inconsistant = False, suspect_id = ''):
 		self.db_inconsistant = bool(db_inconsistant)
 		self.es_inconsistant = bool(es_inconsistant)
+		self.scp_inconsistant = bool(scp_inconsistant)
 		self.suspect_id = suspect_id
-		self.message = f"compared to before current operation, db is {'inconsistant' if self.db_inconsistant else 'consistant'}, and es is {'inconsistant' if self.es_inconsistant else 'consistant'}{'; suspect id(s) is/are ' + str(self.suspect_id) if self.suspect_id else ''}.{' FIX URGENTLY' if self.db_inconsistant or self.es_inconsistant else ''}"
+		self.message = f"compared to before current operation, db is {'inconsistant' if self.db_inconsistant else 'consistant'}, es is {'inconsistant' if self.es_inconsistant else 'consistant'}, and scp is {'inconsistant' if self.scp_inconsistant else 'consistant'}{'; suspect id(s) is/are ' + str(self.suspect_id) if self.suspect_id else ''}.{' FIX URGENTLY' if self.db_inconsistant or self.es_inconsistant or self.scp_inconsistant else ''}"
 		super().__init__('Datastores are inconsistant')
 	
 	def __str__(self):

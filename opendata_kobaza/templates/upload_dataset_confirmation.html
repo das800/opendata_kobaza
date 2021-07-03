@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+
+{% block title %} <title></title> {% endblock %}
+
+{% block content %}
+	<p id='ul_confirmation'>Your dataset {{ uled_metavars_name }} has been uploaded (id: {{ uled_metavars_id }})</p>
+	<pre><p id='uled_mv'>{{ uled_metavars_json_str }}</p></pre>
+{% endblock %}
