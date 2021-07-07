@@ -18,8 +18,13 @@
     color: var(--warning_color);
 }
 
+html {
+	height: 100%;
+}
+
 body {
     background-color: var(--background_color);
+	height: calc(100vh - 57px); /* this is really bad. i dont care about css so ill still do it though */
 }
 
 p, h1, h2, h3, h4, h5, h6 {
@@ -41,12 +46,15 @@ a:hover {
 }
 
 .content { 
-    margin: auto; 
+    /* margin: auto; */
+	margin-left: auto;
+	margin-right: auto; 
     width: 60%; 
-    /* border: 5px solid #30422d; */
     border: 5px solid var(--accent_color);
     border-top: 0px;
     padding: 10px; 
+	grid-row-start: 1;
+	grid-row-end: 2;
 }
 
 .topnav { 
@@ -54,7 +62,6 @@ a:hover {
     background-color: var(--accent_color); 
 }
 .topnav .navbutton { 
-    /* float: left;  */
     display: block; 
     color: var(--pop_color); 
     text-align: center; 
@@ -72,9 +79,7 @@ a:hover {
     float: right;
 }
 .topnav input[type=text] {
-/* .topnav input { */
     display: block;
-    /* margin: auto; */
     width: 40%;
     padding: 6px;
     border: none;
@@ -84,11 +89,22 @@ a:hover {
     background-color: var(--background_color);
 }
 .topnav-centered input[type=text] {
-/* .topnav-centered input { */
     float: none;
     position: absolute;
     left: 50%;
     transform: translate(-50%, 0%);
+}
+
+#content_wrapper {
+	min-height: 100%;
+	display:grid;
+	grid-template-rows: 1fr auto;
+}
+
+.botnav {
+	bottom: 0;
+	grid-row-start: 3;
+	grid-row-end: 4;
 }
 
 .searchResult {
