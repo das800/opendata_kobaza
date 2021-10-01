@@ -26,7 +26,8 @@ from main import app, ES_CREDS_FILEPATH, SCP_STORAGE_HOST_FILEPATH
 DRIVERS_PATH = '/home/dayan/drivers/browser-drivers'
 CHROME_DRIVER = 'chromedriver'
 
-WEBSITE_ADDRESS = 'http://localhost:5000'
+# WEBSITE_ADDRESS = 'http://localhost:5000'
+WEBSITE_ADDRESS = 'http://kobaza.com'
 
 UL_TEST_DATA_PATH = os.path.join(app.root_path, 'tests')
 UL_TEST_METAVARS_FILENAME = 'ul_test_dataset_raspicputemp_metavars.json'

@@ -20,7 +20,8 @@ import re
 DRIVERS_PATH = '/home/dayan/drivers/browser-drivers'
 CHROME_DRIVER = 'chromedriver'
 
-WEBSITE_ADDRESS = 'http://localhost:5000'
+# WEBSITE_ADDRESS = 'http://localhost:5000'
+WEBSITE_ADDRESS = 'http://kobaza.com'
 
 class WebInterfaceTest(unittest.TestCase):
 	csv_head = ''
